@@ -1,4 +1,4 @@
-<h1 align="center"><a name="youtube-ui-tweaks-icon"><img src="https://cdn.jsdelivr.net/gh/JanGaida/youtube-ui-tweaks@main/src/assets/icon.svg" width="44" alt="YouTube UI Tweaks icon" align="texttop"></a> YouTube UI Tweaks</h1>
+<h1 align="center"><a name="youtube-ui-tweaks-icon"><img src="https://cdn.jsdelivr.net/gh/JanGaida/youtube-ui-tweaks@main/src/assets/icon.svg" width="32" alt="YouTube UI Tweaks icon" align="texttop"></a> YouTube UI Tweaks</h1>
 
 > Fine-grained, runtime-based control over the YouTube UI — sidebar, masthead, grid metadata, chip bars, ads, and more. Everything is configurable in an in-page settings panel and applies live, without reloading.
 
@@ -83,10 +83,16 @@ A Tampermonkey userscript built with Svelte 5 that lets you reshape YouTube to y
 
 ## 📥 Installation
 
+**Quick way** — one click:
+
 [![⚡ Quick install via Tampermonkey](https://img.shields.io/badge/%E2%9A%A1_Quick_install_via-Tampermonkey-00485B.svg?style=for-the-badge)](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js)
 
+Tampermonkey picks up the script from the latest GitHub release and prompts you to install it.
+
+**Long way** — manual install:
+
 <details>
-<summary><strong>Step-by-step guide</strong></summary>
+<summary><strong>Step-by-step instructions</strong></summary>
 
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension.
 2. Download the latest [`youtube-ui-tweaks.user.js`](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js) from the **Releases** page.
