@@ -42,7 +42,7 @@ export default defineConfig({
                 namespace: "https://github.com/JanGaida/youtube-ui-tweaks",
                 author: "Jan Gaida",
                 license: "GPL-3.0",
-                version: "1.1.0", // x-release-please-version
+                version: "1.1.1", // x-release-please-version
                 icon: "https://cdn.jsdelivr.net/gh/JanGaida/youtube-ui-tweaks@main/src/assets/icon.svg",
                 match: ["https://www.youtube.com/*"],
                 grant: ["GM_getValue", "GM_setValue", "GM_registerMenuCommand"],
