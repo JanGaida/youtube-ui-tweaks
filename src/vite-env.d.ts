@@ -22,3 +22,8 @@ declare const GM_setValue: {
 declare const GM_registerMenuCommand: {
     (name: string, fn: () => void, accessKey?: string): void;
 };
+// * GM_info needs no explicit @grant (Tampermonkey provides it unconditionally).
+//   The subset actually consumed — AboutTab reads the userscript version from here.
+declare const GM_info: {
+    version: string;
+};

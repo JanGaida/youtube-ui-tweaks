@@ -2,9 +2,10 @@
  * GM_* polyfill for Playwright addInitScript injection.
  *
  * The userscript expects Tampermonkey-provided globals (`GM_getValue`, `GM_setValue`,
- * `GM_registerMenuCommand` — the explicit grants in vite.config.ts). Playwright has no
- * Tampermonkey — this polyfill provides an in-memory + localStorage-backed equivalent
- * so the script boots.
+ * `GM_registerMenuCommand` — the explicit grants in vite.config.ts; plus `GM_info`,
+ * which Tampermonkey provides unconditionally). Playwright has no Tampermonkey —
+ * this polyfill provides an in-memory + localStorage-backed equivalent so the
+ * script boots.
  *
  * ! GM_addStyle is deliberately NOT polyfilled: the vite-plugin-monkey bundle checks
  *   `typeof GM_addStyle === 'function'` and falls back to appending a <style> element —
@@ -56,6 +57,10 @@ export function buildGmPolyfillInitScript(): string {
         if (mount) mount.appendChild(el);
         return el;
       };
+
+      // * GM_info stub — AboutTab reads the userscript version from GM_info.
+      //   Version is a placeholder; only shape matters under Playwright.
+      window.GM_info = { version: "0.0.0-polyfill", scriptHandler: "playwright" };
 
       // * Registered menu commands — stored so tests/capture can invoke them by label.
       window.__gmCommands = window.__gmCommands || [];
