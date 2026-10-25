@@ -7,7 +7,9 @@
 docs/plans/
 
 # Development stuff
-dev/
+# warn: root-anchored — a bare `dev/` would also swallow src/lib/dev/ (fixture capture
+# tool, imported by src/main.ts and required for typecheck + `npm run build:dev`).
+/dev/
 docs/prototypes/
 
 # Agent assistant state (personal skills, session recovery) — not part of the project
