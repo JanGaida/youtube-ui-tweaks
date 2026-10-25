@@ -1,7 +1,11 @@
-# YouTube UI Tweaks
+# ![YouTube UI Tweaks icon](https://cdn.jsdelivr.net/gh/JanGaida/youtube-ui-tweaks@main/src/assets/icon.svg =44x44) YouTube UI Tweaks
 
 > Fine-grained, runtime-based control over the YouTube UI — sidebar, masthead, grid metadata, chip bars, ads, and more. Everything is configurable in an in-page settings panel and applies live, without reloading.
 
+[![⚡ Install via Tampermonkey](https://img.shields.io/badge/%E2%9A%A1_Install_via-Tampermonkey-00485B?style=for-the-badge)](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js)
+
+[![Version](https://img.shields.io/github/package-json/v/JanGaida/youtube-ui-tweaks)](https://github.com/JanGaida/youtube-ui-tweaks/releases)
+[![Last commit](https://img.shields.io/github/last-commit/JanGaida/youtube-ui-tweaks)](https://github.com/JanGaida/youtube-ui-tweaks/commits/main)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![Type: Tampermonkey](https://img.shields.io/badge/Type-Tampermonkey-00485B.svg)](https://www.tampermonkey.net/)
 [![CI](https://github.com/JanGaida/youtube-ui-tweaks/actions/workflows/ci.yml/badge.svg)](https://github.com/JanGaida/youtube-ui-tweaks/actions/workflows/ci.yml)
