@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/JanGaida/youtube-ui-tweaks/compare/youtube-ui-tweaks-v1.1.0...youtube-ui-tweaks-v1.1.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **release:** align the userscript [@version](https://github.com/version) with release 1.1.0 and record the release-please contract ([e191b46](https://github.com/JanGaida/youtube-ui-tweaks/commit/e191b46e44c5e9ce505faf3d0389d866fead61df))
+
 ## [1.1.0](https://github.com/JanGaida/youtube-ui-tweaks/compare/youtube-ui-tweaks-v1.0.0...youtube-ui-tweaks-v1.1.0) (2026-10-25)
 
 
