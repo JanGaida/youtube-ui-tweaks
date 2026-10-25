@@ -171,8 +171,7 @@ flowchart TB
 - Observer dispatch: `src/lib/core/observer.ts`
 - Page detection: `src/lib/core/page.ts`
 - Settings: `src/lib/core/settings.ts`
-- Plan history: `docs/plans/feature-registry-architecture.md`
 - Related docs: [system-overview.md](system-overview.md), [system-toggles.md](system-toggles.md)
 - Hot-path debug guards: [ADR 0005](../adr/0005-isdebugenabled-guard-over-unguarded-log-args.md)
 
-Verified: 2026-10-24 — against `src/lib/core/registry.ts`, `src/lib/core/feature.types.ts`, `src/lib/core/features/index.ts` (17 registered features; meta-split after text-shorten — run-order dependency), `src/lib/core/observer.ts` (scheduleLiveApply/flushLiveApply/restoreAndRunAll wiring; boot runs runAll() before startObserver()) @ working tree (re-checked 2026-10-25 after the ADR 0007 defaults change: DEFAULT_SETTINGS shipped a curated baseline — registry dispatch/live-apply wiring unchanged; settings.ts comment-only re-pass, no behavior change)
+Verified: 2026-10-24 — against `src/lib/core/registry.ts`, `src/lib/core/feature.types.ts`, `src/lib/core/features/index.ts` (17 registered features; meta-split after text-shorten — run-order dependency), `src/lib/core/observer.ts` (scheduleLiveApply/flushLiveApply/restoreAndRunAll wiring; boot runs runAll() before startObserver()) @ working tree (re-checked 2026-10-25 after the ADR 0007 defaults change: DEFAULT_SETTINGS shipped a curated baseline — registry dispatch/live-apply wiring unchanged; settings.ts comment-only re-pass, no behavior change; removed the Plan-history reference — docs/plans/ stays internal and is not published with the repo)
