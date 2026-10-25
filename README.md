@@ -83,11 +83,7 @@ A Tampermonkey userscript built with Svelte 5 that lets you reshape YouTube to y
 
 ## 📥 Installation
 
-<div align="center">
-
 [![⚡ Quick install via Tampermonkey](https://img.shields.io/badge/%E2%9A%A1_Quick_install_via-Tampermonkey-00485B.svg?style=for-the-badge)](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js)
-
-</div>
 
 <details>
 <summary><strong>Step-by-step guide</strong></summary>
@@ -104,9 +100,6 @@ Tampermonkey auto-updates: the userscript's `updateURL` points at the latest Git
 
 ## 🔨 Building from Source
 
-<details>
-<summary><strong>Build instructions</strong></summary>
-
 Requires Node.js.
 
 ```bash
@@ -118,12 +111,7 @@ npm run build      # → dist/youtube-ui-tweaks.user.js
 
 Install the built `dist/youtube-ui-tweaks.user.js` in Tampermonkey.
 
-</details>
-
 ## 🧪 Development
-
-<details>
-<summary><strong>Development commands and test setup</strong></summary>
 
 ```bash
 npm run check       # svelte-check + tsc typecheck (includes tests)
@@ -134,8 +122,6 @@ npm run format      # prettier
 ```
 
 > **Note on fixtures:** The E2E suite runs against captured YouTube DOM fixtures that are deliberately **not committed** (they contain real captured page data). Fixture-based tests skip automatically when the fixtures are absent — clone, develop, and run the unit suite anywhere; capture your own fixtures with `npm run build:dev` to run the full suite locally.
-
-</details>
 
 ## 🧩 Compatibility
 
