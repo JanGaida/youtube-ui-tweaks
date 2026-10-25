@@ -220,7 +220,7 @@ function buildFixtureBlob(meta: FixtureMeta, domHtml: string, styles: string): s
         `<!-- FIXTURE: ${meta.type} | captured: ${meta.captured} | url: ${meta.url} | locale: ${meta.locale}`,
         `     | capture-tool: dev/capture.ts`,
         `     | probe-counts: ${JSON.stringify(meta.probeCounts)}`,
-        `     | recapture: run build:dev → TM menu "Fixture: ${meta.type}" → paste over this file`,
+        `     | recapture: run build:dev → TM menu "Capture All Fixtures" → paste over this file`,
         `-->`,
     ].join("\n");
     const metaTag = `<fixture-meta data-captured="${meta.captured}" data-locale="${meta.locale}" data-url="${meta.url}" data-type="${meta.type}" data-probe-counts='${JSON.stringify(meta.probeCounts)}'></fixture-meta>`;

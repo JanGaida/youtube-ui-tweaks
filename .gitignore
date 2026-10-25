@@ -39,6 +39,9 @@ tsconfig.node.tsbuildinfo
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/youtube-ui-tweaks.code-workspace
 .idea
 .DS_Store
 *.suo

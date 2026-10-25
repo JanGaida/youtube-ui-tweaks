@@ -110,7 +110,18 @@ npm run docs:check  # architecture-docs gate
 npm run format      # prettier
 ```
 
-> **Note on fixtures:** The E2E suite runs against captured YouTube DOM fixtures that are deliberately **not committed** (they contain real captured page data). Fixture-based tests skip automatically when the fixtures are absent — clone, develop, and run the unit suite anywhere; capture your own fixtures with `npm run build:dev` to run the full suite locally.
+## 📸 Capturing Fixtures
+
+The fixture and E2E suites run against real YouTube DOM snapshots that are **deliberately not committed** (they contain personal page data). Capture your own set locally:
+
+1. Build the dev script: `npm run build:dev` → `dist/youtube-ui-tweaks.dev.user.js` (capture tooling included)
+2. Install it in Tampermonkey, replacing the production script
+3. Log into YouTube — auth-gated fixtures (subscriptions, member-only) need a session
+4. Tampermonkey menu → **Capture All Fixtures** — the batch navigates to each preset page (home, subscriptions, channel, search, masthead, guide-full, guide-mini, member-only) and auto-downloads every `.fixture.html`
+5. Move the downloads into `src/lib/core/__fixtures__/`
+6. `npm test` — the fixture tests now run against your captures
+
+> ! Capture runs against live youtube.com and is deliberately manual — CI never captures (YouTube withholds data from automation-driven browsers). Recapture when fixture tests go red after a YouTube DOM change. Full details: [CONTEXT.md — Fixture Capture](CONTEXT.md#fixture-capture-dev-only)
 
 ## 🧩 Compatibility
 

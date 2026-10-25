@@ -1,0 +1,77 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "build",
+            "detail": "Minified prod build, capture code dead-code-eliminated (__DEV_CAPTURE__=false) → dist/youtube-ui-tweaks.user.js",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$tsc"],
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "label": "Build (prod)"
+        },
+        {
+            "type": "npm",
+            "script": "build:dev",
+            "detail": "YT_DEV_CAPTURE=1 → capture tooling + 'Capture All' overlay included (__DEV_CAPTURE__=true) → dist/youtube-ui-tweaks.dev.user.js",
+            "group": "build",
+            "problemMatcher": ["$tsc"],
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "label": "Build (dev)"
+        },
+        {
+            "type": "npm",
+            "script": "check",
+            "detail": "svelte-check (tsconfig.json) + tsc (tsconfig.node.json) — typecheck gate before commit",
+            "group": "test",
+            "problemMatcher": ["$tsc"],
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "label": "Typecheck"
+        },
+        {
+            "type": "npm",
+            "script": "test:watch",
+            "detail": "Vitest watch mode — re-runs on file change, never exits (no exit code; stop via Terminate Task)",
+            "group": "test",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "label": "Test (Unit, Watch)"
+        },
+        {
+            "type": "npm",
+            "script": "test:e2e",
+            "detail": "Playwright Firefox against locally hosted fixtures (localhost:4174, never live YouTube) — needs prior 'npm run build', single worker, ~20-50s",
+            "group": "test",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "label": "Test (E2E, Browser)"
+        },
+        {
+            "type": "npm",
+            "script": "test:e2e:ui",
+            "detail": "Playwright UI mode — interactive watch + trace inspector (time-travel debugging), stays alive until closed",
+            "group": "test",
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "label": "Test (E2E, interaktiv)"
+        },
+        {
+            "type": "npm",
+            "script": "format",
+            "detail": "prettier --write . — auto-fix formatting (4-space indent, double quotes, 120 cols)",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "label": "Format (auto-fix)"
+        },
+        {
+            "type": "npm",
+            "script": "docs:check",
+            "detail": "Docs gate — coverage, mandatory sections, reference paths, mermaid sanity; FAIL blocks task completion",
+            "group": "test",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "label": "Docs Gate"
+        }
+    ]
+}
