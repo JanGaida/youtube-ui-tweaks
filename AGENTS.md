@@ -94,3 +94,12 @@ creating, updating, or reviewing architecture docs).
 ## Small Precise Steps
 
 ALWAYS prefer many precise steps over one large — each step MUST be traceable, reversible and verifiable.
+
+## Git & PR Conventions
+
+- ALL changes to `main` land via squash-merged PRs — the PR TITLE becomes the commit subject
+- PR titles MUST follow Conventional Commits: `type(scope): description` — details and rationale:
+  [ADR 0009](docs/adr/0009-squash-merge-and-pr-title-contract.md)
+- Commits touching release-managed files (versions, marker, release config) MUST be
+  changelog-visible (`feat`/`fix`) — rationale:
+  [ADR 0008](docs/adr/0008-release-please-automation-contract.md)
