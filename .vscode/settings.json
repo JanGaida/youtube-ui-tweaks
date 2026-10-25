@@ -1,0 +1,4 @@
+{
+    "cSpell.words": ["xlarge", "xsmall"],
+    "cSpell.ignorePaths": ["src/lib/core/__fixtures__/**", "CHANGELOG.md", "dist/**", ".kilo/**"]
+}

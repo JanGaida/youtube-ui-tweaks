@@ -290,18 +290,13 @@ e2e/
 
 Fixtures are real YouTube DOM snippets (HTML + computed styles + shadow-boundary markers) stored in `src/lib/core/__fixtures__/`. The capture tooling is **integrated into the userscript** and only present in `build:dev` (gated by the `__DEV_CAPTURE__` compile-time flag; stripped in production builds).
 
-**Capturing a fixture:**
+**Capturing fixtures** (single path — the batch menu entry; there is no per-type panel UI or quick-capture menu):
 
 1. `npm run build:dev` → install the resulting `dist/youtube-ui-tweaks.dev.user.js` in Tampermonkey.
-2. Open YouTube, navigate to a page with the target element (e.g. the homepage for a grid item).
-3. Open settings (Tampermonkey menu → "Einstellungen") → System category → "Fixture Capture (dev)" group (only visible in dev build).
-4. Select a fixture type from the dropdown → click "Capture & Download". The `.fixture.html` file auto-downloads.
-5. Move the file into `src/lib/core/__fixtures__/`. Review/trim if needed.
-6. `npm run test` — the fixture tests run against the new file.
-
-**Quick capture** (no panel): Tampermonkey menu → "Capture Fixture (quick)" captures a home-grid-item immediately.
-
-**Capture All** (one-click, all fixtures): Tampermonkey menu → **"Capture All Fixtures"** sequentially navigates to each preset's page (home, subscriptions, channel, search, masthead, guide-full, guide-mini, member-only) and auto-downloads every `.fixture.html`. After the run, move the downloads from your Firefox download folder into `src/lib/core/__fixtures__/` (overwrite existing files).
+2. Log into YouTube first for auth-gated fixtures (subscriptions, member-only).
+3. Tampermonkey menu → **"Capture All Fixtures"** — sequentially navigates to each preset's page (home, subscriptions, channel, search, masthead, guide-full, guide-mini, member-only) and auto-downloads every `.fixture.html`.
+4. Move the downloads from your Firefox download folder into `src/lib/core/__fixtures__/` (overwrite existing files). Review/trim if needed.
+5. `npm test` — the fixture tests run against the new captures.
 
 ! Playwright-driven capture was tried and abandoned — YouTube's bot detection silently withholds grid data when the browser is automation-controlled (the page renders only a skeleton shell). Capture must run in a real Firefox via Tampermonkey.
 
@@ -329,7 +324,7 @@ npm test                 # vitest fixture tests run against the new captures
 | ------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `lockup-meta-split` | User-reported LIVE DOM 2026-10-24 (Fall 1/2/3) | Current ONE-row lockup metadata (names + views + date mixed) — the 2026-08-23 home capture has SEPARATE rows per part and can no longer exercise the split pass | `features/meta-split.ts` |
 
-`guide-full`/`guide-mini` are captured; the earlier `home-promo-shelf`/`home-discover-shelf` presets are no longer referenced by feature code (the promo/discover shelves are hidden via CSS `:has()` selectors that don't need a fixture). To capture `badge-row`: add a preset in `src/lib/dev/capture.ts`, run "Capture All Fixtures" (or capture individually via the panel).
+`guide-full`/`guide-mini` are captured; the earlier `home-promo-shelf`/`home-discover-shelf` presets are no longer referenced by feature code (the promo/discover shelves are hidden via CSS `:has()` selectors that don't need a fixture). To capture `badge-row`: add a preset in `src/lib/dev/capture.ts` and run "Capture All Fixtures".
 
 **jsdom limit:** jsdom has limited shadow-DOM support. Selectors ending in shadow DOM are marked `shadowBoundary: true` in the fixture meta; tests for those should be skipped with a `// * shadow-dom: manually verified` comment. ~70-80% of selectors are light-DOM-testable.
 
