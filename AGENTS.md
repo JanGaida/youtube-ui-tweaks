@@ -97,7 +97,10 @@ ALWAYS prefer many precise steps over one large — each step MUST be traceable,
 
 ## Git & PR Conventions
 
-- ALL changes to `main` land via squash-merged PRs — the PR TITLE becomes the commit subject
+- `main` is a PROTECTED branch — NEVER push to it directly; ALL changes land via
+  squash-merged PRs (the PR TITLE becomes the commit subject)
+- NEVER push to any remote without explicit human confirmation in the session —
+  commit locally, then ask
 - PR titles MUST follow Conventional Commits: `type(scope): description` — details and rationale:
   [ADR 0009](docs/adr/0009-squash-merge-and-pr-title-contract.md)
 - Commits touching release-managed files (versions, marker, release config) MUST be

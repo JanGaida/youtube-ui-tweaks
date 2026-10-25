@@ -2,17 +2,21 @@
 
 > Fine-grained, runtime-based control over the YouTube UI — sidebar, masthead, grid metadata, chip bars, ads, and more. Everything is configurable in an in-page settings panel and applies live, without reloading.
 
-<p align="center">
-    <a href="https://github.com/JanGaida/youtube-ui-tweaks/releases">![Version](https://img.shields.io/github/package-json/v/JanGaida/youtube-ui-tweaks)</a>
-    <a href="https://github.com/JanGaida/youtube-ui-tweaks/commits/main">![Last commit](https://img.shields.io/github/last-commit/JanGaida/youtube-ui-tweaks)</a>
-    <a href="https://github.com/JanGaida/youtube-ui-tweaks/actions/workflows/ci.yml">![CI](https://github.com/JanGaida/youtube-ui-tweaks/actions/workflows/ci.yml/badge.svg)</a>
-    <a href="LICENSE">![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)</a>
-    <a href="https://www.tampermonkey.net/">![Type: Tampermonkey](https://img.shields.io/badge/Type-Tampermonkey-00485B.svg)</a>
-</p>
+<div align="center">
 
-<p align="center">
-    <a href="https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js">![⚡ Install via Tampermonkey](https://img.shields.io/badge/%E2%9A%A1_Install_via-Tampermonkey-00485B.svg)</a>
-</p>
+[![Version](https://img.shields.io/github/package-json/v/JanGaida/youtube-ui-tweaks)](https://github.com/JanGaida/youtube-ui-tweaks/releases)
+[![Last commit](https://img.shields.io/github/last-commit/JanGaida/youtube-ui-tweaks)](https://github.com/JanGaida/youtube-ui-tweaks/commits/main)
+[![CI](https://github.com/JanGaida/youtube-ui-tweaks/actions/workflows/ci.yml/badge.svg)](https://github.com/JanGaida/youtube-ui-tweaks/actions/workflows/ci.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+[![Type: Tampermonkey](https://img.shields.io/badge/Type-Tampermonkey-00485B.svg)](https://www.tampermonkey.net/)
+
+</div>
+
+<div align="center">
+
+[![⚡ Install via Tampermonkey](https://img.shields.io/badge/%E2%9A%A1_Install_via-Tampermonkey-00485B.svg)](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js)
+
+</div>
 
 A Tampermonkey userscript built with Svelte 5 that lets you reshape YouTube to your taste — hide what you never use, compact what you read at a glance, and keep the rest native. All tweaks apply through scoped CSS (`.yt-tweaks-*` prefix) and targeted DOM mutations, designed to coexist with other extensions and scripts.
 

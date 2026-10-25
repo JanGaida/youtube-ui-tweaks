@@ -25,9 +25,10 @@ PRs, since self-approval is impossible.
 2. **The PR title is the commit**: squash takes the PR title as the commit subject, so PR titles
    MUST follow Conventional Commits (`type(scope): description`) — the same format as direct
    commits. `.github/PULL_REQUEST_TEMPLATE.md` carries the format reminder into every new PR.
-3. **Branch protection for `main`**: required status check (`build` = CI), branches up to date,
-   force pushes and deletions blocked; **no review requirement** — solo maintainer, and the
-   bot's release PRs must stay mergeable.
+3. **Branch protection for `main`**: pull requests REQUIRED before merging (zero approvals
+   required — solo maintainer, self-approval is impossible, and the bot's release PRs must
+   stay mergeable), required status check (`build` = CI), branches up to date, force pushes
+   and deletions blocked.
 4. **Release PRs are unaffected**: release-please detects its merged PRs by label and title, not
    by commit structure — squash-merging `chore(main): release X.Y.Z` is fully supported.
 
