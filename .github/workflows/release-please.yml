@@ -1,8 +1,13 @@
 # ☰☰☰ Release Please — changelog + version automation ☰☰☰
 # Watches conventional commits on main and maintains a release PR
 # ("chore(main): release X.Y.Z") containing CHANGELOG.md + version bumps.
-# Merging that PR creates the git tag vX.Y.Z and the GitHub Release, which in
-# turn triggers release.yml (build + attach the .user.js release asset).
+# Merging that PR creates the git tag vX.Y.Z and the GitHub Release, and the
+# release-assets job below builds + attaches the .user.js release asset.
+#
+# ! The asset build MUST live in THIS workflow: release-please publishes the
+#   Release via GITHUB_TOKEN, and events triggered by GITHUB_TOKEN deliberately
+#   do not start other workflow runs (GitHub recursion guard). A separate
+#   `on: release` workflow would therefore never fire for automated releases.
 
 name: Release Please
 
@@ -10,7 +15,7 @@ on:
   push:
     branches: [main]
 
-# ─── Permissions — release-please needs to open/merge PRs + push tags ───
+# ─── Permissions — release-please needs to open/merge PRs, push tags + upload assets ───
 permissions:
   contents: write
   pull-requests: write
@@ -18,11 +23,42 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
-          # LABEL: config lists the bump targets; package.json is the primary
-          #   version source, vite.config.ts (userscript @version header) is kept
-          #   in sync via the generic updater in extra-files.
+          # LABEL: config lists the bump targets; package.json via the json
+          #   updater, vite.config.ts (userscript @version header, marked with
+          #   `x-release-please-version`) via the generic updater.
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # LABEL: runs only when the release-please run above actually published a
+  #   Release — silent on pushes without releasable changes.
+  release-assets:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # LABEL: checkout the release tag + Node 22
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      # LABEL: build the prod artifact
+      - run: npm ci
+      - run: npm run build
+      # LABEL: attach dist/youtube-ui-tweaks.user.js to the release — the file
+      #   that the userscript's updateURL/downloadURL points at
+      #   (releases/latest/download/...).
+      - name: Attach userscript to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG_NAME" dist/youtube-ui-tweaks.user.js

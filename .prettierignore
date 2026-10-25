@@ -16,3 +16,4 @@ playwright.config.d.ts
 vitest.config.js
 vitest.config.d.ts
 CHANGELOG.md
+.release-please-manifest.json
