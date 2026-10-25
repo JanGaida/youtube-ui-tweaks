@@ -1,4 +1,4 @@
-# ![YouTube UI Tweaks icon](https://cdn.jsdelivr.net/gh/JanGaida/youtube-ui-tweaks@main/src/assets/icon.svg =44x44) YouTube UI Tweaks
+# <img src="https://cdn.jsdelivr.net/gh/JanGaida/youtube-ui-tweaks@main/src/assets/icon.svg" width="44" alt="YouTube UI Tweaks icon" valign="middle"> YouTube UI Tweaks
 
 > Fine-grained, runtime-based control over the YouTube UI — sidebar, masthead, grid metadata, chip bars, ads, and more. Everything is configurable in an in-page settings panel and applies live, without reloading.
 
