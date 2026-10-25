@@ -1,0 +1,28 @@
+# ☰☰☰ Release Please — changelog + version automation ☰☰☰
+# Watches conventional commits on main and maintains a release PR
+# ("chore(main): release X.Y.Z") containing CHANGELOG.md + version bumps.
+# Merging that PR creates the git tag vX.Y.Z and the GitHub Release, which in
+# turn triggers release.yml (build + attach the .user.js release asset).
+
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+# ─── Permissions — release-please needs to open/merge PRs + push tags ───
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # LABEL: config lists the bump targets; package.json is the primary
+          #   version source, vite.config.ts (userscript @version header) is kept
+          #   in sync via the generic updater in extra-files.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

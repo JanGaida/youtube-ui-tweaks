@@ -1,0 +1,933 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARK: Settings panel styles — extracted from the panelStyles() monolith
+   ─────────────────────────────────────────────────────────────────────────────
+   * Global classes (no scoped styles) — Trusted-Types-safe via Vite CSS injection
+     (textContent, no innerHTML). Imported in App.svelte. */
+
+.yt-tweaks-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.yt-tweaks-panel {
+    position: fixed;
+    z-index: 2147483647;
+    background: #0f0f0f;
+    color: #f1f1f1;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    width: 30vw;
+    height: 40vh;
+    max-width: 95vw;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14px;
+    animation: ytTweaksIn 0.16s ease-out;
+}
+@keyframes ytTweaksIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.yt-tweaks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #212121;
+    border-radius: 12px 12px 0 0;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+}
+.yt-tweaks-title {
+    font-weight: 600;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.yt-tweaks-title-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: inline-block;
+}
+.yt-tweaks-close {
+    background: transparent;
+    border: 0;
+    color: #f1f1f1;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+.yt-tweaks-close:hover {
+    background: #303030;
+}
+.yt-tweaks-main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+.yt-tweaks-sidebar {
+    width: 172px;
+    flex-shrink: 0;
+    background: #181818;
+    border-right: 1px solid #303030;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+.yt-tweaks-cat-list {
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.yt-tweaks-iconbar {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    border-top: 1px solid #303030;
+    flex-shrink: 0;
+}
+.yt-tweaks-iconbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 0;
+    color: #888;
+    cursor: pointer;
+    border-radius: 6px;
+    transition:
+        background 0.12s,
+        color 0.12s;
+    text-decoration: none;
+}
+.yt-tweaks-iconbar-btn:hover {
+    background: #212121;
+    color: #f1f1f1;
+}
+.yt-tweaks-iconbar-btn svg {
+    display: block;
+}
+/* * Filled icons (GitHub) have inherent path padding → render slightly larger for visual parity */
+.yt-tweaks-iconbar-btn--filled svg {
+    width: 20px;
+    height: 20px;
+}
+.yt-tweaks-cat-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: #aaa;
+    padding: 10px 14px;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition:
+        background 0.12s,
+        color 0.12s;
+}
+.yt-tweaks-cat-btn:hover {
+    background: #212121;
+    color: #f1f1f1;
+}
+.yt-tweaks-cat-btn.active {
+    background: #0f0f0f;
+    color: #f1f1f1;
+    border-left: 3px solid #ff0000;
+    padding-left: 11px;
+}
+.yt-tweaks-cat-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: currentColor;
+}
+.yt-tweaks-cat-icon svg {
+    display: block;
+}
+.yt-tweaks-cat-label {
+    font-size: 13px;
+}
+.yt-tweaks-cat-count {
+    margin-left: auto;
+    font-size: 10px;
+    color: #666;
+    background: #212121;
+    border-radius: 8px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+}
+/* * Section sublist of the active category (indented under the category button) */
+.yt-tweaks-section-sublist {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 2px 0 6px 8px;
+}
+.yt-tweaks-section-sub-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: #777;
+    padding: 5px 14px 5px 24px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    transition:
+        background 0.12s,
+        color 0.12s;
+}
+.yt-tweaks-section-sub-btn:hover {
+    background: #212121;
+    color: #ccc;
+}
+/* * No active-section highlight (deliberately removed): sub-section buttons stay visually
+      flat — only the main category button (.yt-tweaks-cat-btn.active) is highlighted.
+      The .active class remains on the button as a state hook (scroll-spy), without CSS. */
+.yt-tweaks-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    min-width: 0;
+    /* * scroll-padding-top ensures scrollIntoView(block:start) doesn't slam the
+     *   section against the content edge — some breathing room like the section-list padding. */
+    scroll-padding-top: 16px;
+}
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARK: Section-List + Section — flat sections (no collapse)
+   ───────────────────────────────────────────────────────────────────────────── */
+/* * The masonry layout runs entirely in section-masonry.ts (shortest-column
+      packing, absolute cards in this container). Only optics + padding live
+      here; column count/balance/spacing are JS (the panel is user-resizable —
+      viewport-based media queries don't apply; CSS columns balance poorly
+      under high height variance, hence the JS approach). */
+.yt-tweaks-section-list {
+    padding: 14px 18px;
+}
+.yt-tweaks-section {
+    background: #161616;
+    border: 1px solid #252525;
+    border-radius: 8px;
+    /* * box-sizing needed so width (column width) includes the border — otherwise
+          each card would overshoot its column by 2px and the default spacing breaks. */
+    box-sizing: border-box;
+    overflow: hidden;
+}
+.yt-tweaks-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #252525;
+}
+.yt-tweaks-section-headtext {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+.yt-tweaks-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin: 0;
+}
+.yt-tweaks-section-desc {
+    font-size: 11px;
+    color: #888;
+    line-height: 1.4;
+    margin: 0;
+}
+.yt-tweaks-section-body {
+    padding: 8px 14px;
+}
+/* ─── Disabled section body + fields (group Super-Switch off) ───────────────── */
+.yt-tweaks-section-disabled .yt-tweaks-field,
+.yt-tweaks-field-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+.yt-tweaks-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+}
+.yt-tweaks-field-label {
+    color: #c0c0c0;
+    font-size: 13px;
+    min-width: 0;
+}
+/* ─── Field label sub-description (small gotcha text under the label) ──────── */
+.yt-tweaks-field-desc {
+    display: block;
+    color: #808080;
+    font-size: 11px;
+    line-height: 1.3;
+    margin-top: 2px;
+}
+/* ─── DraggableRow (DnD order) ────────────────────────────────────────── */
+.yt-tweaks-dnd-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 0;
+    position: relative;
+}
+.yt-tweaks-dnd-row.dragging {
+    opacity: 0.4;
+}
+.yt-tweaks-dnd-row.drag-over {
+    cursor: grabbing;
+}
+.yt-tweaks-dnd-handle {
+    color: #666;
+    cursor: grab;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    /* Button reset — the grip is a focusable <button> (keyboard reorder). */
+    padding: 0;
+    border: 0;
+    margin: 0;
+    background: transparent;
+    font: inherit;
+    appearance: none;
+    transition: color 0.12s;
+}
+.yt-tweaks-dnd-handle:focus-visible {
+    outline: 2px solid #44aaff;
+    outline-offset: 1px;
+    border-radius: 3px;
+}
+.yt-tweaks-dnd-handle:hover {
+    color: #f1f1f1;
+}
+.yt-tweaks-dnd-handle:active {
+    cursor: grabbing;
+}
+.yt-tweaks-dnd-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #ff0000;
+    z-index: 5;
+    pointer-events: none;
+}
+.yt-tweaks-dnd-indicator:first-child {
+    top: 0;
+}
+.yt-tweaks-dnd-indicator:last-child {
+    bottom: 0;
+}
+.yt-tweaks-ds-subsection {
+    margin-top: 12px;
+}
+.yt-tweaks-ds-subsection:first-child {
+    margin-top: 4px;
+}
+.yt-tweaks-ds-subsection-title {
+    font-size: 11px;
+    color: #999;
+    padding: 8px 0 4px;
+    border-top: 1px solid #2a2a2a;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.yt-tweaks-ds-subsection-body {
+    padding: 2px 0 4px;
+}
+.yt-tweaks-switch-row {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin: 0 !important;
+    justify-content: flex-end !important;
+}
+.yt-tweaks-switch-track {
+    display: inline-block;
+    position: relative;
+    width: 40px;
+    height: 18px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 9999px;
+    box-shadow:
+        inset 0 0.1em 0.03em #0002,
+        inset 0 0.1em 0.3em #0003;
+    transition:
+        background 0.2s,
+        border-color 0.2s;
+    flex-shrink: 0;
+}
+.yt-tweaks-switch-track:has(.yt-tweaks-switch-input:checked) {
+    background: #5a1818;
+    border-color: #cc2222;
+}
+.yt-tweaks-switch-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    opacity: 0;
+}
+.yt-tweaks-switch-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    font-size: 11px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    box-sizing: border-box;
+    color: #ccc;
+    background: #444;
+    transition: 0.25s ease-in-out;
+}
+.yt-tweaks-switch-input:checked + .yt-tweaks-switch-thumb {
+    transform: translateX(22px);
+    background: #cc2222;
+    color: #fff;
+}
+.yt-tweaks-switch-track:has(.yt-tweaks-switch-input:disabled) {
+    opacity: 0.4;
+    cursor: default;
+}
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARK: Segmented Control — compact enum selector (custom buttons etc.)
+   ─────────────────────────────────────────────────────────────────────────────
+   * All options visible in one pill track, a red indicator slides to the active
+     segment (slide transition analogous to the switch thumb). data-active-index
+     drives the indicator position via --seg-index (calc formula, no JS styling needed).
+   * Theme: bg #1a1a1a / border #3a3a3a / accent #cc2222 / accent-soft #5a1818. */
+.yt-tweaks-seg {
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 2px;
+    width: 96px;
+    height: 24px;
+    padding: 2px;
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.yt-tweaks-seg:focus-visible {
+    outline: 1px solid #cc2222;
+    outline-offset: 1px;
+}
+.yt-tweaks-seg-ind {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    /* * Width = 1 segment (content minus padding minus gaps), position via --seg-index. */
+    width: calc((100% - 4px - (var(--seg-count, 3) - 1) * 2px) / var(--seg-count, 3));
+    left: calc(2px + var(--seg-index) * ((100% - 4px - (var(--seg-count, 3) - 1) * 2px) / var(--seg-count, 3) + 2px));
+    background: #5a1818;
+    border: 1px solid #cc2222;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: left 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.yt-tweaks-seg button {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: #666;
+    cursor: pointer;
+    border-radius: 6px;
+}
+.yt-tweaks-seg button:hover:not([aria-checked="true"]) {
+    color: #999;
+}
+.yt-tweaks-seg button[aria-checked="true"] {
+    color: #f1f1f1;
+}
+.yt-tweaks-seg button:focus-visible {
+    outline: 1px solid #cc2222;
+    outline-offset: 0;
+}
+.yt-tweaks-seg-txt {
+    font-size: 10px;
+    white-space: nowrap;
+}
+.yt-tweaks-seg-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+}
+.yt-tweaks-panel label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 6px 0;
+}
+.yt-tweaks-panel input[type="text"]:not(.yt-tweaks-stepper-num) {
+    width: 170px;
+    box-sizing: border-box;
+    background: #212121;
+    color: #f1f1f1;
+    border: 1px solid #303030;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font: inherit;
+    transition: border-color 0.12s;
+}
+.yt-tweaks-panel input[type="text"]:not(.yt-tweaks-stepper-num).invalid {
+    border-color: #ff0000;
+}
+.yt-tweaks-panel input[type="text"]:not(.yt-tweaks-stepper-num).valid {
+    border-color: #2e7d32;
+}
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARK: Custom Dropdown (DD7 Two-Line Rich) — replaces native <select>
+   ─────────────────────────────────────────────────────────────────────────────
+   * Clipping-safe: the popout is position:fixed. .yt-tweaks-panel is itself fixed
+     without a persistent transform → the fixed child uses the viewport as its
+     containing block and escapes .yt-tweaks-content (overflow-y:auto). No portal needed.
+   * Theme: bg #212121 / border #303030 / hover #2a2a2a / accent #ff0000 /
+     selected-HG #2e1414 / sub #777. Reposition-on-scroll via rAF (JS in Select.svelte). */
+.yt-tweaks-dropdown {
+    position: relative;
+}
+.yt-tweaks-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 170px;
+    box-sizing: border-box;
+    background: #212121;
+    color: #f1f1f1;
+    border: 1px solid #303030;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition:
+        border-color 0.12s,
+        background 0.12s;
+}
+.yt-tweaks-dropdown-trigger:hover {
+    border-color: #555;
+    background: #2a2a2a;
+}
+.yt-tweaks-dropdown-trigger.open {
+    border-color: #ff0000;
+}
+.yt-tweaks-dropdown-trigger:focus-visible {
+    outline: 2px solid #ff0000;
+    outline-offset: 1px;
+}
+.yt-tweaks-dropdown-trigger:disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+.yt-tweaks-dropdown-trigger-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.yt-tweaks-dropdown-chevron {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: #888;
+    transition: transform 0.18s ease;
+}
+.yt-tweaks-dropdown-trigger.open .yt-tweaks-dropdown-chevron {
+    transform: rotate(180deg);
+    color: #ff0000;
+}
+
+/* Floating popout — clipping-safe via position:fixed (JS sets the coordinates) */
+.yt-tweaks-dropdown-popout {
+    position: fixed;
+    z-index: 9999;
+    min-width: 170px;
+    max-width: 260px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    background: #212121;
+    border: 1px solid #303030;
+    border-radius: 6px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+    padding: 4px;
+    animation: ytTweaksDdPop 0.12s ease-out;
+}
+@keyframes ytTweaksDdPop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.yt-tweaks-dropdown-opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #ccc;
+    transition:
+        background 0.1s,
+        color 0.1s;
+}
+.yt-tweaks-dropdown-opt:hover,
+.yt-tweaks-dropdown-opt.active {
+    background: #2a2a2a;
+    color: #f1f1f1;
+}
+.yt-tweaks-dropdown-opt.selected {
+    background: #2e1414;
+    color: #f1f1f1;
+}
+.yt-tweaks-dropdown-opt-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+.yt-tweaks-dropdown-opt-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.yt-tweaks-dropdown-opt-desc {
+    font-size: 10px;
+    color: #777;
+    line-height: 1.3;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.yt-tweaks-dropdown-check {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: #ff0000;
+    opacity: 0;
+}
+.yt-tweaks-dropdown-opt.selected .yt-tweaks-dropdown-check {
+    opacity: 1;
+}
+.yt-tweaks-about {
+    padding: 4px 0;
+}
+.yt-tweaks-about-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+.yt-tweaks-about-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #212121;
+}
+.yt-tweaks-about-key {
+    color: #aaa;
+}
+.yt-tweaks-about-val {
+    color: #f1f1f1;
+}
+.yt-tweaks-about-link {
+    color: #3ea6ff;
+    text-decoration: none;
+}
+.yt-tweaks-about-link:hover {
+    text-decoration: underline;
+}
+.yt-tweaks-about-changelog {
+    margin-top: 18px;
+}
+/* * Dedicated changelog title styling (previously repurposed .yt-tweaks-section-title —
+     its alt duplicate was removed; .yt-tweaks-section-title belongs solely to the
+     section cards). The existing effective duplicate styling carries the look. */
+.yt-tweaks-changelog-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+}
+.yt-tweaks-changelog-entry {
+    padding: 6px 0;
+    color: #ccc;
+}
+.yt-tweaks-debug-status {
+    margin-top: 8px;
+}
+.yt-tweaks-debug-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #212121;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARK: Stepper — −[n]+ pill for percent/int values (no range track)
+   ─────────────────────────────────────────────────────────────────────────────
+   * Proportions = dropdown trigger (panel.css:478): 170px width, radius 6,
+     font-size 13px, 4px/8px rhythm → both controls read as siblings.
+   * The unit is a silent segment INSIDE the 170px (analogous to the chevron
+     corner in the trigger) — total width stays constant regardless of unit.
+   ───────────────────────────────────────────────────────────────────────────── */
+.yt-tweaks-stepper {
+    display: inline-flex;
+    align-items: stretch;
+    width: 170px;
+    box-sizing: border-box;
+    background: #212121;
+    border: 1px solid #303030;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition:
+        border-color 0.12s,
+        background 0.12s;
+}
+.yt-tweaks-stepper:hover {
+    background: #2a2a2a;
+    border-color: #555;
+}
+.yt-tweaks-stepper.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+.yt-tweaks-step-btn {
+    width: 30px;
+    background: transparent;
+    color: #ddd;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    user-select: none;
+    transition:
+        background 0.12s,
+        color 0.12s,
+        transform 0.05s;
+}
+.yt-tweaks-step-btn:hover {
+    background: #2f2f2f;
+    color: #fff;
+}
+.yt-tweaks-step-btn:active {
+    transform: scale(0.9);
+    color: #ff0000;
+}
+.yt-tweaks-step-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+    transform: none;
+}
+.yt-tweaks-stepper-num {
+    box-sizing: border-box;
+    background: transparent;
+    color: #f1f1f1;
+    border: 0;
+    border-left: 1px solid #303030;
+    border-right: 1px solid #303030;
+    /* * 4px vertical padding = trigger rhythm → pill height == trigger height
+       (13px font + 8px vertical padding + 2px border, no fixed value needed) */
+    padding: 4px;
+    font: inherit;
+    font-size: 13px;
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+    width: 48px;
+}
+.yt-tweaks-stepper-num::-webkit-inner-spin-button,
+.yt-tweaks-stepper-num::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.yt-tweaks-stepper-num:focus {
+    outline: none;
+    background: #1a1a1a;
+}
+.yt-tweaks-stepper-num.invalid {
+    color: #ff4d4d;
+}
+.yt-tweaks-stepper-num:disabled {
+    cursor: default;
+}
+.yt-tweaks-stepper-unit {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px 4px 6px;
+    border-left: 1px solid #303030;
+    font-size: 12px;
+    color: #888;
+    white-space: nowrap;
+    flex-shrink: 0;
+    user-select: none;
+}
+.yt-tweaks-number {
+    width: 48px;
+    box-sizing: border-box;
+    background: #212121;
+    color: #f1f1f1;
+    border: 1px solid #303030;
+    border-radius: 6px;
+    padding: 3px 4px;
+    font: inherit;
+    font-size: 12px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.yt-tweaks-number.invalid {
+    border-color: #ff4d4d;
+    color: #ff4d4d;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARK: Resize handles — 8 handles (4 edges + 4 corners) at the panel border
+   ───────────────────────────────────────────────────────────────────────────── */
+.yt-tweaks-resize-handles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+.yt-tweaks-rh {
+    position: absolute;
+    pointer-events: auto;
+    /* Button reset — the handles are focusable <button>s (keyboard resize); without
+       this they would inherit the native button chrome. */
+    padding: 0;
+    border: 0;
+    margin: 0;
+    background: transparent;
+    font: inherit;
+    appearance: none;
+}
+.yt-tweaks-rh:focus-visible {
+    outline: 2px solid #44aaff;
+    outline-offset: -2px;
+}
+.yt-tweaks-rh.n {
+    top: -3px;
+    left: 12px;
+    right: 12px;
+    height: 6px;
+    cursor: ns-resize;
+}
+.yt-tweaks-rh.s {
+    bottom: -3px;
+    left: 12px;
+    right: 12px;
+    height: 6px;
+    cursor: ns-resize;
+}
+.yt-tweaks-rh.e {
+    right: -3px;
+    top: 12px;
+    bottom: 12px;
+    width: 6px;
+    cursor: ew-resize;
+}
+.yt-tweaks-rh.w {
+    left: -3px;
+    top: 12px;
+    bottom: 12px;
+    width: 6px;
+    cursor: ew-resize;
+}
+.yt-tweaks-rh.ne {
+    top: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+}
+.yt-tweaks-rh.nw {
+    top: -3px;
+    left: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+}
+.yt-tweaks-rh.se {
+    bottom: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+}
+.yt-tweaks-rh.sw {
+    bottom: -3px;
+    left: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+}

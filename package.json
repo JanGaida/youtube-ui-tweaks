@@ -1,0 +1,55 @@
+{
+    "name": "youtube-ui-tweaks",
+    "description": "Provides several YouTube UI Tweaks",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "license": "GPL-3.0",
+    "author": "Jan Gaida",
+    "homepage": "https://github.com/JanGaida/youtube-ui-tweaks#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/JanGaida/youtube-ui-tweaks.git"
+    },
+    "bugs": {
+        "url": "https://github.com/JanGaida/youtube-ui-tweaks/issues"
+    },
+    "keywords": [
+        "youtube",
+        "userscript",
+        "tampermonkey",
+        "tweaks",
+        "svelte"
+    ],
+    "scripts": {
+        "dev": "vite",
+        "build": "cross-env NODE_ENV=production vite build",
+        "build:dev": "cross-env YT_DEV_CAPTURE=1 vite build",
+        "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
+        "docs:check": "node scripts/check-docs.mjs",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.62.1",
+        "@sveltejs/vite-plugin-svelte": "^7.1.1",
+        "@testing-library/jest-dom": "^7.0.0",
+        "@tsconfig/svelte": "^5.0.8",
+        "@types/node": "^26.1.2",
+        "cross-env": "^10.1.0",
+        "jsdom": "^29.1.1",
+        "prettier": "^3.9.6",
+        "prettier-plugin-svelte": "^4.1.1",
+        "svelte": "^5.55.5",
+        "svelte-check": "^4.4.8",
+        "tslib": "^2.8.1",
+        "typescript": "^6.0.3",
+        "vite": "^8.0.11",
+        "vite-plugin-monkey": "^8.0.0",
+        "vitest": "^4.1.10"
+    }
+}

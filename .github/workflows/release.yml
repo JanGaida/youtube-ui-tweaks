@@ -1,0 +1,33 @@
+# ☰☰☰ Release Asset — build + attach the userscript to a GitHub Release ☰☰☰
+# Fires when release-please publishes a Release. Builds the prod userscript and
+# attaches dist/youtube-ui-tweaks.user.js as a release asset — the file that the
+# userscript's updateURL/downloadURL points at (releases/latest/download/...).
+
+name: Build Release Userscript
+
+on:
+  release:
+    types: [published]
+
+# ─── Permissions — needs to write release assets ───
+permissions:
+  contents: write
+
+jobs:
+  build-and-attach:
+    runs-on: ubuntu-latest
+    steps:
+      # LABEL: checkout the release tag + Node 22
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      # LABEL: build the prod artifact
+      - run: npm ci
+      - run: npm run build
+      # LABEL: attach dist/youtube-ui-tweaks.user.js to the release ($GITHUB_REF_NAME = tag)
+      - name: Attach userscript to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/youtube-ui-tweaks.user.js

@@ -1,0 +1,35 @@
+# ☰☰☰ CI — quality gate on every push/PR to main ☰☰☰
+# Runs the full local gate suite: typecheck (incl. tests), unit tests, docs gate,
+# format check, prod build. E2E is NOT run here: it needs captured YouTube DOM
+# fixtures which are deliberately not in the repo (they skip via fixture-harness).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# ─── Permissions — minimal, read-only ───
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: check / test / docs / format / build
+    runs-on: ubuntu-latest
+    steps:
+      # LABEL: checkout + Node 22 with npm cache
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      # LABEL: the gates (order = fail-fast: cheapest first)
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run docs:check
+      - run: npm run format:check
+      - run: npm run build
