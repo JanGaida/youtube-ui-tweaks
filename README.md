@@ -83,26 +83,9 @@ A Tampermonkey userscript built with Svelte 5 that lets you reshape YouTube to y
 
 ## 📥 Installation
 
-**Quick way** — one click:
-
 [![⚡ Quick install via Tampermonkey](https://img.shields.io/badge/%E2%9A%A1_Quick_install_via-Tampermonkey-00485B.svg?style=for-the-badge)](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js)
 
-Tampermonkey picks up the script from the latest GitHub release and prompts you to install it.
-
-**Long way** — manual install:
-
-<details>
-<summary><strong>Step-by-step instructions</strong></summary>
-
-1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension.
-2. Download the latest [`youtube-ui-tweaks.user.js`](https://github.com/JanGaida/youtube-ui-tweaks/releases/latest/download/youtube-ui-tweaks.user.js) from the **Releases** page.
-3. Open the downloaded file in your browser — Tampermonkey will prompt to install it.
-4. Open [youtube.com](https://www.youtube.com/) — your tweaks apply automatically.
-5. Open the settings panel via the Tampermonkey menu command (labeled _Einstellungen_ on German YouTube, _Settings_ otherwise).
-
-Tampermonkey auto-updates: the userscript's `updateURL` points at the latest GitHub Release, so new versions install themselves.
-
-</details>
+One click — Tampermonkey ([the only prerequisite](https://www.tampermonkey.net/)) picks up the script from the latest GitHub release and prompts to install. Updates install themselves automatically via the userscript's `updateURL`. Afterwards, open the settings panel from the Tampermonkey menu command (labeled _Einstellungen_ on German YouTube, _Settings_ otherwise).
 
 ## 🔨 Building from Source
 
