@@ -1,16 +1,23 @@
 # Fixtures — captured real YouTube DOM, deliberately NOT published (privacy).
 # Fixture-based tests skip themselves when these are absent (fixture-harness.ts).
-**/__fixtures__/**
-!**/__fixtures__
+# note: the whole directory is pruned (`__fixtures__/`), NOT just its `/**` content — the
+#   previous `!**/__fixtures__` dir-negation kept the folder exempt, which only matters
+#   for future file-level whitelists; fixture content is never published, so the simple
+#   prune wins.
+**/__fixtures__/
 
-# Internal planning documents
-docs/plans/
+# Internal planning documents — ignore ALL of docs/, keep only the whitelist.
+# warn: gitignore cannot re-include children of an excluded directory — `!docs/adr/*`
+#   would be ineffective because `docs/*` excludes the docs/adr DIRECTORY itself.
+#   The negation must target the directories WITHOUT the /* glob.
+docs/*
+!docs/adr
+!docs/architecture
 
 # Development stuff
 # warn: root-anchored — a bare `dev/` would also swallow src/lib/dev/ (fixture capture
 # tool, imported by src/main.ts and required for typecheck + `npm run build:dev`).
 /dev/
-docs/prototypes/
 
 # Agent assistant state (personal skills, session recovery) — not part of the project
 .kilo/
@@ -32,16 +39,17 @@ dist-ssr
 # Build artifacts — note: emitted *.config.js next to a *.config.ts would SHADOW the
 # real config (Vite loads .js first). tsconfig.json sets noEmit to prevent emission;
 # these files are deliberately NOT gitignored so an accidental re-emission is visible.
-tsconfig.node.tsbuildinfo
 *.tsbuildinfo
 .tsbuild-node/
 
-# Editor directories and files
+# VS Code — the workspace file single-sources the VS Code settings (settings.json is
+# deliberately NOT whitelisted: folder-level config would split from the workspace file)
 .vscode/*
 !.vscode/extensions.json
-!.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/youtube-ui-tweaks.code-workspace
+
+# Editor directories and files (other editors / OS junk)
 .idea
 .DS_Store
 *.suo
