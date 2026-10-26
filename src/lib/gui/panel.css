@@ -89,13 +89,19 @@
     border-right: 1px solid #303030;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    /* ! Overflow lives on the cat-list, NOT here: with overflow-y:auto on the sidebar,
+         the iconbar (export/import/reset/GitHub) scrolled away with the nav items — it
+         must stay pinned at the bottom of the sidebar while only the list scrolls. */
+    overflow: hidden;
 }
 .yt-tweaks-cat-list {
     padding: 8px 0;
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 .yt-tweaks-iconbar {
     display: flex;
@@ -213,6 +219,9 @@
     overflow-y: auto;
     padding: 0;
     min-width: 0;
+    /* * overscroll-behavior: contain (with the JS trap in panel.ts) keeps wheel/touch inside
+        the panel — scrolling the settings must never chain into the YouTube page. */
+    overscroll-behavior: contain;
     /* * scroll-padding-top ensures scrollIntoView(block:start) doesn't slam the
      *   section against the content edge — some breathing room like the section-list padding. */
     scroll-padding-top: 16px;
@@ -601,6 +610,7 @@
     max-width: 260px;
     max-height: calc(100vh - 24px);
     overflow-y: auto;
+    overscroll-behavior: contain;
     background: #212121;
     border: 1px solid #303030;
     border-radius: 6px;

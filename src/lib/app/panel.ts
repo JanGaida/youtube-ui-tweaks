@@ -11,6 +11,45 @@ import App from "../gui/App.svelte";
 let app: ReturnType<typeof mount> | null = null;
 let appTarget: HTMLDivElement | null = null;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MARK: Scroll trap — wheel/touch inside the panel must never scroll YouTube
+// ─────────────────────────────────────────────────────────────────────────────
+// * Layer 1 (CSS): `overscroll-behavior: contain` on the scroll containers stops native
+//   chain-scrolling at their edges (panel.css).
+// * Layer 2 (here): wheel/touch targets OUTSIDE any scroll container (panel header, sidebar
+//   iconbar, backdrop, panel padding) would chain straight into the page — prevented here.
+//   Inner containers keep their normal scrolling: preventDefault fires only when the
+//   nearest container cannot consume the gesture (not scrollable / already at the edge).
+//   Listener attaches to the app host (not document) — no passive:true needed for
+//   preventDefault, and YouTube sees nothing while the panel is closed.
+
+const SCROLL_CONTAINER_SELECTOR = ".yt-tweaks-content, .yt-tweaks-cat-list, .yt-tweaks-dropdown-popout";
+
+let wheelTrap: ((e: WheelEvent) => void) | null = null;
+let touchTrap: ((e: TouchEvent) => void) | null = null;
+
+/** True when `el` can consume a wheel gesture of `deltaY` (has overflow, not at the edge). */
+function consumesWheel(el: Element, deltaY: number): boolean {
+    const c = el as HTMLElement;
+    if (c.scrollHeight <= c.clientHeight) return false;
+    if (deltaY < 0) return c.scrollTop > 0;
+    return c.scrollTop + c.clientHeight < c.scrollHeight;
+}
+
+function wheelTargetInsidePanel(e: WheelEvent): void {
+    const target = e.target;
+    if (!(target instanceof Element) || !appTarget?.contains(target)) return;
+    const container = target.closest(SCROLL_CONTAINER_SELECTOR);
+    if (!container || !consumesWheel(container, e.deltaY)) e.preventDefault();
+}
+
+function touchTargetInsidePanel(e: TouchEvent): void {
+    const target = e.target;
+    if (!(target instanceof Element) || !appTarget?.contains(target)) return;
+    const container = target.closest(SCROLL_CONTAINER_SELECTOR);
+    if (!container) e.preventDefault();
+}
+
 /**
  * Opens (mounts) the settings panel. Idempotent: no-op when already open.
  *
@@ -27,6 +66,10 @@ export function openSettings(): void {
     }
     appTarget = document.createElement("div");
     document.body.append(appTarget);
+    wheelTrap = wheelTargetInsidePanel;
+    touchTrap = touchTargetInsidePanel;
+    appTarget.addEventListener("wheel", wheelTrap, { passive: false });
+    appTarget.addEventListener("touchmove", touchTrap, { passive: false });
     app = mount(App, {
         target: appTarget,
         props: {
@@ -42,6 +85,10 @@ export function openSettings(): void {
  */
 export function closeSettings(): void {
     if (!app || !appTarget) return;
+    if (wheelTrap) appTarget.removeEventListener("wheel", wheelTrap);
+    if (touchTrap) appTarget.removeEventListener("touchmove", touchTrap);
+    wheelTrap = null;
+    touchTrap = null;
     unmount(app);
     appTarget.remove();
     app = null;
