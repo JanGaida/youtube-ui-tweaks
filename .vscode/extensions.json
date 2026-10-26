@@ -1,11 +1,11 @@
 {
-    // * Recommended extensions — VS Code prompts for these when opening the workspace
+    // Recommended extensions
     "recommendations": [
-        // * Spell-checker — config lives in settings.json (cSpell.words / cSpell.ignorePaths)
+        // Spell-checker
         "streetsidesoftware.code-spell-checker",
-        // * Language support for the Svelte 5 frontend (settings panel, capture overlay)
+        // Language support for the Svelte 5
         "svelte.svelte-vscode",
-        // * Formatter backing the CI format gate (4-space indent, double quotes, 120 cols)
+        // Formatter
         "esbenp.prettier-vscode"
     ]
 }

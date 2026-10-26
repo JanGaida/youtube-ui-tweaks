@@ -4,4 +4,23 @@
             "path": "..",
         },
     ],
+    "settings": {
+        "files.exclude": {
+            ".tsbuild-node": true,
+            ".playwright": true,
+            ".kilo": true,
+            ".github": true,
+            ".vscode": false,
+        },
+        "cSpell.words": ["xlarge", "xsmall"],
+        "cSpell.ignorePaths": [
+            "dist/**",
+            ".tsbuild-node/**",
+            ".kilo/**",
+            ".playwright/**",
+            "node_modules/**",
+            "src/lib/core/__fixtures__/**",
+            "CHANGELOG.md",
+        ],
+    },
 }
