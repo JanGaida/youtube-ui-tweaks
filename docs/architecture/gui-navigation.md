@@ -143,6 +143,31 @@ flowchart LR
   end
 ```
 
+## About Tab (Data Flow)
+
+```mermaid
+flowchart LR
+  GM["GM_info.script.version (Tampermonkey: header @version)<br/>fallback GM_info.version (optional field, handler-dependent)"]
+  CH["__CHANGELOG_B64__ (vite define: CHANGELOG.md,<br/>newline-normalized + base64, build time — ADR 0010)"]
+  Decode["decodeChangelog (atob + TextDecoder)"]
+  Parse["parseChangelog + changelogFor (about-changelog.ts, pure)"]
+  Tab["AboutTab.svelte"]
+  GM --> Tab
+  CH --> Decode
+  Decode --> Parse
+  Parse --> Tab
+  Tab -->|renders entry of installed version,<br/>fallback: newest entry + mismatch note| Out["about section card"]
+  Tab -.->|"Full changelog link (plain a href,<br/>no grant / no fetch)"| GitHub["CHANGELOG.md on main"]
+```
+
+- The embedded changelog is the raw release-please markdown of the same build — the release
+  PR merges header version, CHANGELOG.md and the attached asset in one commit
+  ([ADR 0008](../adr/0008-release-please-automation-contract.md)), so version + changelog
+  cannot diverge. Rendering decisions: [ADR 0010](../adr/0010-about-tab-changelog-embedded-at-build-time.md).
+- ! The version source is `GM_info.script.version` (REQUIRED per the Tampermonkey GM_info
+  type): the top-level `GM_info.version` is optional and observed (TM 5.5.0) to return the
+  script-handler extension version instead of the header version.
+
 ## Panel A11y (Keyboard Support)
 
 - **Modal focus trap**: Tab/Shift+Tab cycle within the panel (without it, Tab escapes
@@ -218,5 +243,6 @@ flowchart TB
 - Masonry: `src/lib/gui/navigation/section-masonry.ts` (pure: `layoutMasonry`)
 - Components: `src/lib/gui/components/CategorySidebar.svelte`, `src/lib/gui/components/Section.svelte`
 - App shell: `src/lib/gui/App.svelte`
+- About tab: `src/lib/gui/tabs/AboutTab.svelte`, `src/lib/gui/about-changelog.ts` (parser + decode, ADR 0010), `src/vite-env.d.ts` (GM_info subset incl. `script.version`), `src/lib/gui/icons.ts` (SUB_ICONS.github, EXTERNAL_ICON)
 
-Verified: 2026-10-25 — against `src/lib/gui/navigation/categories.ts` (9 categories; video-item: 9 sections incl. preview-delay; ads-promotions: 3 sections; watch-page: 1 section), `src/lib/gui/navigation/section-masonry.ts` (rAF coalescing), `src/lib/gui/App.svelte` (focus trap, keyboard resize, a11y.resize* labels), `src/lib/gui/components/CategorySidebar.svelte` + `src/lib/gui/panel.css` (re-checked 2026-10-25: section-sub-btn `.active` carries no visual highlight anymore — red border + white text removed, category-button `.active` unchanged; scroll-spy `.active` state hook retained) @ working tree
+Verified: 2026-10-26 — against `src/lib/gui/navigation/categories.ts` (9 categories; video-item: 9 sections incl. preview-delay; ads-promotions: 3 sections; watch-page: 1 section), `src/lib/gui/navigation/section-masonry.ts` (rAF coalescing), `src/lib/gui/App.svelte` (focus trap, keyboard resize, a11y.resize* labels), `src/lib/gui/components/CategorySidebar.svelte` + `src/lib/gui/panel.css` (re-checked 2026-10-26: about rows compact gap layout + version pill; changelog head pill, left-ruled body, scope-highlighted bullets — .yt-tweaks-changelog-* styles), `src/lib/gui/tabs/AboutTab.svelte` + `src/lib/gui/about-changelog.ts` (re-checked 2026-10-26: version from GM_info.script.version with GM_info.version fallback, changelog embedded base64 via `__CHANGELOG_B64__` define in `vite.config.ts` (decodeChangelog), section-by-version with newest-entry fallback + mismatch note, debug-gated GM_info snapshot on open — ADR 0010; Tampermonkey docs GM_info type: top-level version optional, script.version required — TM 5.5.0 bug report), `src/lib/gui/i18n.svelte.ts` (about.* keys in de + en), `src/main.ts` (unconditional GM_info boot snapshot), `src/lib/gui/icons.ts` (SUB_ICONS.github, EXTERNAL_ICON) @ working tree

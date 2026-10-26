@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import monkey from "vite-plugin-monkey";
@@ -16,9 +18,23 @@ import monkey from "vite-plugin-monkey";
  */
 const DEV_CAPTURE = process.env.YT_DEV_CAPTURE === "1";
 
+// * CHANGELOG.md is read at BUILD time and embedded into the bundle via `define`
+//   (ADR 0010). The release PR bumps CHANGELOG.md and the `@version` header in the
+//   same merge → the About tab always renders the changelog matching the built
+//   header, with zero runtime fetch (no GM_xmlhttpRequest, no YouTube-CSP risk).
+// * The content is NEWLINE-NORMALIZED (CRLF → LF, no platform variance) and embedded
+//   BASE64-ENCODED (decoded in about-changelog.ts): the bundle carries one compact,
+//   non-readable literal instead of a multi-line raw-text block users would see.
+const CHANGELOG_MD = readFileSync(fileURLToPath(new URL("./CHANGELOG.md", import.meta.url)), "utf-8").replace(
+    /\r\n/g,
+    "\n",
+);
+const CHANGELOG_B64 = Buffer.from(CHANGELOG_MD, "utf-8").toString("base64");
+
 export default defineConfig({
     define: {
         __DEV_CAPTURE__: JSON.stringify(DEV_CAPTURE),
+        __CHANGELOG_B64__: JSON.stringify(CHANGELOG_B64),
     },
 
     build: {

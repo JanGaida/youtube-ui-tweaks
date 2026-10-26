@@ -58,9 +58,10 @@ export function buildGmPolyfillInitScript(): string {
         return el;
       };
 
-      // * GM_info stub — AboutTab reads the userscript version from GM_info.
+      // * GM_info stub — AboutTab reads the userscript version from GM_info.script.version
+      //   (real Tampermonkey shape; see ADR 0010).
       //   Version is a placeholder; only shape matters under Playwright.
-      window.GM_info = { version: "0.0.0-polyfill", scriptHandler: "playwright" };
+      window.GM_info = { version: "0.0.0-polyfill", scriptHandler: "playwright", script: { version: "0.0.0-polyfill" } };
 
       // * Registered menu commands — stored so tests/capture can invoke them by label.
       window.__gmCommands = window.__gmCommands || [];

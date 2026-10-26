@@ -678,43 +678,131 @@
     font-weight: 600;
     margin-bottom: 14px;
 }
+/* * About rows are compact (label + value grouped with a gap, not space-between):
+      the gap must not scale with panel width — key and value belong together optically. */
 .yt-tweaks-about-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 14px;
     padding: 6px 0;
     border-bottom: 1px solid #212121;
 }
+.yt-tweaks-about-rows .yt-tweaks-about-row:last-child {
+    border-bottom: none;
+}
 .yt-tweaks-about-key {
     color: #aaa;
+    flex-shrink: 0;
 }
 .yt-tweaks-about-val {
     color: #f1f1f1;
 }
+.yt-tweaks-about-pill {
+    padding: 2px 10px;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    font-size: 11px;
+    font-weight: 600;
+}
 .yt-tweaks-about-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     color: #3ea6ff;
     text-decoration: none;
+}
+.yt-tweaks-about-link svg {
+    flex-shrink: 0;
 }
 .yt-tweaks-about-link:hover {
     text-decoration: underline;
 }
+/* * Changelog block: header row (title + version pill), left-ruled body listing the
+      entries, scope-highlighted bullets. One rendered section = the installed version. */
 .yt-tweaks-about-changelog {
-    margin-top: 18px;
+    margin-top: 16px;
 }
-/* * Dedicated changelog title styling (previously repurposed .yt-tweaks-section-title —
-     its alt duplicate was removed; .yt-tweaks-section-title belongs solely to the
-     section cards). The existing effective duplicate styling carries the look. */
+.yt-tweaks-changelog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
 .yt-tweaks-changelog-title {
     font-size: 12px;
     font-weight: 600;
     color: #aaa;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 8px;
+}
+.yt-tweaks-changelog-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 10px;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f1f1f1;
+    font-size: 11px;
+    font-weight: 600;
+}
+.yt-tweaks-changelog-date {
+    color: #aaa;
+    font-weight: 400;
+}
+.yt-tweaks-changelog-body {
+    padding-left: 12px;
+    border-left: 2px solid #212121;
+}
+.yt-tweaks-changelog-group {
+    margin: 8px 0 2px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 .yt-tweaks-changelog-entry {
-    padding: 6px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 0;
     color: #ccc;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.yt-tweaks-changelog-entry::before {
+    content: "•";
+    color: #555;
+    flex-shrink: 0;
+}
+.yt-tweaks-changelog-scope {
+    color: #3ea6ff;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.yt-tweaks-changelog-mismatch {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border: 1px solid #903b23;
+    border-radius: 4px;
+    color: #ff8a73;
+    font-size: 11px;
+}
+.yt-tweaks-changelog-full {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #3ea6ff;
+    text-decoration: none;
+}
+.yt-tweaks-changelog-full:hover {
+    text-decoration: underline;
 }
 .yt-tweaks-debug-status {
     margin-top: 8px;

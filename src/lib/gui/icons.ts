@@ -40,3 +40,6 @@ export const SUB_ICONS: Record<string, string> = {
 
 /** Chevron path used by accordion/group toggles. */
 export const CHEVRON_PATH = "M9 18l6-6-6-6";
+
+/** External-link arrow (Feather "external-link") for links that open in a new tab. */
+export const EXTERNAL_ICON = "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6 M15 3h6v6 M10 14L21 3";
