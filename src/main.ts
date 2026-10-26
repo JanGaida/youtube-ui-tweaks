@@ -47,13 +47,36 @@ try {
     console.error("[YT-Tweaks] boot: setLogLevel failed", e);
 }
 
+// * Boot diagnostic — the script-manager's own GM_info, unconditional (boot once, not a hot
+//   path). Picked fields instead of the raw object: `script.version` is the header @version
+//   (the authoritative installed version), the top-level `version` is handler-dependent
+//   (TM 5.5.0 was observed to report its own extension version here — ADR 0010), and
+//   `script.header` shows the STORED metadata the manager parsed from the install.
+const gm = typeof GM_info !== "undefined" ? GM_info : null;
+const gmInfo = gm
+    ? {
+          scriptHandler: gm.scriptHandler,
+          version_topLevel: gm.version,
+          script_version: gm.script?.version,
+          script_header: gm.script?.header,
+          script_fileURL: gm.script?.fileURL,
+          script_updateURL: gm.script?.updateURL,
+          script_downloadURL: gm.script?.downloadURL,
+      }
+    : null;
+
 console.info(
     `%c[YT-Tweaks]%c INFO %cboot`,
     "color:#ff0000;font-weight:700",
     "color:#44aaff;font-weight:600",
     "color:#aaa;font-style:italic",
     `document-start (readyState=${document.readyState})`,
-    { locale, logLevel: settings.debug ? settings.debug.logLevel : "?", enabled: settings.system.tweaksEnabled },
+    {
+        locale,
+        logLevel: settings.debug ? settings.debug.logLevel : "?",
+        enabled: settings.system.tweaksEnabled,
+        gm: gmInfo,
+    },
 );
 
 // * Anonymize layer — boot-time apply (independent of the kill-switch). If saved on, mount the

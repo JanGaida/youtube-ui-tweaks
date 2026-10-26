@@ -532,6 +532,9 @@ const TRANSLATIONS: Record<GuiLocale, Record<string, string>> = {
         "about.author": "Author",
         "about.github": "GitHub",
         "about.changelog": "Changelog",
+        "about.changelogFull": "Gesamtes Changelog auf GitHub",
+        "about.changelogMismatch":
+            "Die installierte Kopie stimmt nicht mit diesem Build überein — Skript von GitHub neu installieren.",
         "btn.export": "Export",
         "btn.import": "Import",
         "msg.importFailed": "Import fehlgeschlagen — ungültiges JSON-Format.",
@@ -1048,6 +1051,8 @@ const TRANSLATIONS: Record<GuiLocale, Record<string, string>> = {
         "about.author": "Author",
         "about.github": "GitHub",
         "about.changelog": "Changelog",
+        "about.changelogFull": "Full changelog on GitHub",
+        "about.changelogMismatch": "The installed copy does not match this build — reinstall the script from GitHub.",
     },
 };
 
