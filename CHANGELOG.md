@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/JanGaida/youtube-ui-tweaks/compare/youtube-ui-tweaks-v1.1.1...youtube-ui-tweaks-v1.2.0) (2026-10-26)
+
+
+### Features
+
+* **about:** embed the release changelog at build time and redesign the About tab ([#6](https://github.com/JanGaida/youtube-ui-tweaks/issues/6)) ([bf72baf](https://github.com/JanGaida/youtube-ui-tweaks/commit/bf72baf650406455c0fa2ef897dcef9ee7e93339))
+
+
+### Bug Fixes
+
+* **gui:** pin the sidebar iconbar and keep wheel/touch scrolling inside the panel ([#7](https://github.com/JanGaida/youtube-ui-tweaks/issues/7)) ([5f38e0e](https://github.com/JanGaida/youtube-ui-tweaks/commit/5f38e0ecc56343a8e04e164368dd7d837b5a6e14))
+
 ## [1.1.1](https://github.com/JanGaida/youtube-ui-tweaks/compare/youtube-ui-tweaks-v1.1.0...youtube-ui-tweaks-v1.1.1) (2026-10-25)
 
 
