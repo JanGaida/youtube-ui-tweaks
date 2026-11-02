@@ -25,6 +25,8 @@
         "dev": "vite",
         "build": "cross-env NODE_ENV=production vite build",
         "build:dev": "cross-env YT_DEV_CAPTURE=1 vite build",
+        "install:prod": "node scripts/open-tampermonkey-install.mjs dist/youtube-ui-tweaks.user.js",
+        "install:dev": "node scripts/open-tampermonkey-install.mjs dist/youtube-ui-tweaks.dev.user.js",
         "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
         "test": "vitest run",
         "test:watch": "vitest",
