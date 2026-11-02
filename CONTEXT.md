@@ -29,17 +29,22 @@ Built with **Svelte 5 (Runes) + TypeScript**, bundled by **Vite + vite-plugin-mo
 npm install        # install deps
 npm run check      # svelte-check + tsc — typecheck gate (must be green before commit; includes tests)
 npm test           # vitest run — pure-logic + jsdom fixture tests (~373 tests, 29 files)
+npm run test:watch # vitest — watch mode (re-runs on change, never exits)
 npm run test:e2e   # playwright test — E2E against locally hosted fixtures (needs `npm run build`)
 npm run test:e2e:ui # playwright --ui — interactive E2E debugging (time-travel, watch mode)
 npm run docs:check # architecture-docs gate (feature coverage, reference paths, Verified footers)
 npm run build      # production build (capture stripped, minified) → dist/youtube-ui-tweaks.user.js
 npm run build:dev  # dev build (fixture-capture tooling included, unminified) → dist/youtube-ui-tweaks.dev.user.js
+npm run install:prod # serve dist artifact on 127.0.0.1 + open Tampermonkey install page (artifact must exist)
+npm run install:dev  # same for the dev artifact — replaces the prod script in Tampermonkey
 npm run format     # prettier --write . (4-space auto-fix)
 npm run format:check # prettier --check . (CI gate)
 npm run dev        # vite dev server (HMR — not useful for userscript testing, see Dev Workflow below)
 ```
 
-**Build output**: prod → `dist/youtube-ui-tweaks.user.js`, dev → `dist/youtube-ui-tweaks.dev.user.js` (distinct name so E2E `dev` mode provably tests the dev artifact). The file you install in Tampermonkey is the prod build. The userscript header (metadata block) is generated from `vite.config.ts` `monkey.userscript` block, NOT hand-written.
+VS Code tasks for the command list (incl. the sequential `Quality Gate`) live in `.vscode/tasks.json`.
+
+**Build output**: prod → `dist/youtube-ui-tweaks.user.js`, dev → `dist/youtube-ui-tweaks.dev.user.js` (distinct name so E2E `dev` mode provably tests the dev artifact). The file you install in Tampermonkey is normally the prod build; `install:dev` replaces it with the dev artifact, and because both share name, version, and `updateURL`, the next release update restores the prod build. The userscript header (metadata block) is generated from `vite.config.ts` `monkey.userscript` block, NOT hand-written.
 
 ## Project Structure
 
