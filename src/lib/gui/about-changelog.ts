@@ -70,9 +70,10 @@ export function parseChangelog(markdown: string): ChangelogEntry[] {
  * markdown text — `atob` + `TextDecoder` so non-ASCII content (arrows, umlauts)
  * survives the browser-native decode.
  */
+import { decodeText } from "../core/encoding";
+
 export function decodeChangelog(encoded: string): string {
-    const bytes = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
-    return new TextDecoder("utf-8").decode(bytes);
+    return decodeText(encoded);
 }
 
 /**
