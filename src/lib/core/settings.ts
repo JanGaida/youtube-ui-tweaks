@@ -455,9 +455,10 @@ export type WatchDescriptionLines = "2" | "3" | "4" | "5";
  *   inside `ytd-video-owner-renderer`).
  * - `hideLikeDislike`: hide the entire segmented like+dislike block
  *   (`segmented-like-dislike-button-view-model`).
- * - `shareButton` / `saveButton` / `downloadButton`: per-button enum
+ * - `shareButton` / `saveButton` / `downloadButton` / `thanksButton`: per-button enum
  *   ("standard"|"verstecken"). Share/Save are matched via a locale-aware JS DOM pass
- *   (aria-label text-match); Download is language-independent (custom element, pure CSS).
+ *   (aria-label text-match); Download and Thanks are language-independent (custom
+ *   element / non-localized "Thanks" aria-label, pure CSS).
  * - `descriptionClickFold`: click on the description background toggles expand/collapse
  *   (links & buttons excluded) — single capture listener delegated on `document`
  *   (re-render-immune), plus a theme-color hover rule for the expanded box (CSS).
@@ -470,6 +471,7 @@ export interface WatchPageSettings {
     shareButton: WatchActionButtonMode;
     saveButton: WatchActionButtonMode;
     downloadButton: WatchActionButtonMode;
+    thanksButton: WatchActionButtonMode;
     descriptionClickFold: boolean;
     descriptionLines: WatchDescriptionLines;
 }
@@ -708,6 +710,7 @@ export const DEFAULT_SETTINGS: Settings = {
         shareButton: "verstecken",
         saveButton: "verstecken",
         downloadButton: "verstecken",
+        thanksButton: "verstecken",
         descriptionClickFold: true,
         descriptionLines: "3",
     },

@@ -1,8 +1,8 @@
 <script lang="ts">
     /**
      * Watch-Page tab: metadata & action-button layout of the `/watch` page
-     * (ytd-watch-metadata). One flat section with 7 controls — member-button hide,
-     * like/dislike hide, share/save/download enum, description click-fold + line-count.
+     * (ytd-watch-metadata). One flat section with 8 controls — member-button hide,
+     * like/dislike hide, share/save/download/thanks enum, description click-fold + line-count.
      */
     import Section from "../components/Section.svelte";
     import Field from "../components/Field.svelte";
@@ -41,6 +41,8 @@
     <Field label={t("field.saveButton")}><Select path="watchPage.saveButton" options={actionButtonOptions} /></Field>
     <Field label={t("field.downloadButton")}
         ><Select path="watchPage.downloadButton" options={actionButtonOptions} /></Field
+    >
+    <Field label={t("field.thanksButton")}><Select path="watchPage.thanksButton" options={actionButtonOptions} /></Field
     >
     <Field label={t("field.descriptionClickFold")}><Switch path="watchPage.descriptionClickFold" /></Field>
     <Field label={t("field.descriptionLines")}

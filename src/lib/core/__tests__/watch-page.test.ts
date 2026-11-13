@@ -291,9 +291,28 @@ describe("watch-page feature", () => {
         });
     });
 
+    describe("CSS: Super Thanks hide (non-localized aria-label)", () => {
+        it("emits a :has() hide rule when thanksButton=verstecken", () => {
+            const slice = settings.watchPage as unknown;
+            const rules = watchPageFeature.pages.watch!.css!(slice, ctx);
+            const rule = rules.find((r) => r.includes('button[aria-label="Thanks"]'));
+            expect(rule).toBeDefined();
+            expect(rule).toContain("yt-button-view-model:has(");
+            expect(rule).toContain("display: none !important");
+        });
+
+        it("emits no Thanks rule when thanksButton=standard", () => {
+            settings.watchPage.thanksButton = "standard";
+            const slice = settings.watchPage as unknown;
+            const rules = watchPageFeature.pages.watch!.css!(slice, ctx);
+            expect(rules.some((r) => r.includes('button[aria-label="Thanks"]'))).toBe(false);
+        });
+    });
+
     describe("feature metadata", () => {
         it("declares the expected liveApplyKeys", () => {
             expect(watchPageFeature.liveApplyKeys).toContain("watchPage.descriptionClickFold");
+            expect(watchPageFeature.liveApplyKeys).toContain("watchPage.thanksButton");
             expect(watchPageFeature.liveApplyKeys).toContain("watchPage.enabled");
         });
 
