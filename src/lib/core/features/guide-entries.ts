@@ -254,6 +254,9 @@ const hiddenEls: Set<HTMLElement> = new Set();
 const hiddenSections: Set<HTMLElement> = new Set();
 // * "Mehr anzeigen" expanders expanded via showMore (marker attribute, restore removes it).
 const expandedExpanders: Set<HTMLElement> = new Set();
+// * Debounce for the collapse clicks (showMoreDefault=false) — YT updates the title
+//   asynchronously, so a second observer pass must not toggle the same anchor back open.
+const collapsedAt = new WeakMap<HTMLElement, number>();
 
 /**
  * True when the tracked hidden elements are still connected to the document.
@@ -285,11 +288,15 @@ function appliedStateIsLive(): boolean {
 function guideEntriesRun(ctx: PageCtx): void {
     const g = ctx.settings.guide;
     if (!g.enabled) {
+        log.debug(SCOPES.GUIDE, "disabled — restoring");
         guideEntriesRestore();
         return;
     }
     const entries = collectEntries();
-    if (entries.length === 0) return;
+    if (entries.length === 0) {
+        log.debug(SCOPES.GUIDE, "skip — no guide entries in DOM yet");
+        return;
+    }
 
     // * Hash over hidden-maps + order-arrays + showMore → idempotency.
     const hiddenKeys = Object.keys(g.entries.hidden)
@@ -301,8 +308,13 @@ function guideEntriesRun(ctx: PageCtx): void {
     const hash = `${hiddenKeys.join(",")}|${g.entries.order.join(",")}|${groupHiddenKeys.join(",")}|${g.entries.groups.order.join(",")}|${g.showMoreButton}|${g.showMoreDefault}`;
     // * Settings unchanged AND tracked DOM still live → nothing to do. Settings-only hashes
     //   cannot detect SPA re-renders — the liveness check can (detached tracked elements).
-    if (hash === lastEntriesHash && appliedStateIsLive()) return;
-    lastEntriesHash = hash;
+    if (hash === lastEntriesHash && appliedStateIsLive()) {
+        log.debug(SCOPES.GUIDE, "skip — settings unchanged and DOM state live");
+        return;
+    }
+    // ! Do NOT set lastEntriesHash here. If any step below throws, a pre-set hash would
+    //   match while the DOM is partially mutated; appliedStateIsLive() can still be true
+    //   (tracked sets empty), so every later pass would skip forever. Set it after success.
 
     // * Restore previously hidden entries (if any).
     for (const el of hiddenEls) {
@@ -325,6 +337,9 @@ function guideEntriesRun(ctx: PageCtx): void {
     // * 1. Group assignment + group hide: section with a detected group + group.hidden=true
     //   → whole section display:none (incl. title, channels, everything).
     for (const section of document.querySelectorAll<HTMLElement>(SECTION_SEL)) {
+        // * Clear the stale classification marker before re-detecting — a section that no
+        //   longer matches must not keep last pass's group id.
+        section.removeAttribute(SECTION_GROUP_ATTR);
         const groupId = detectGroupForSection(section, detectEntryKey);
         if (groupId && g.entries.groups.hidden[groupId]) {
             section.style.display = "none";
@@ -383,6 +398,18 @@ function guideEntriesRun(ctx: PageCtx): void {
             exp.setAttribute("data-yt-tweaks-guide-expanded", "");
             exp.click();
             expandedExpanders.add(exp);
+        }
+    } else {
+        // * Collapse already-expanded entries so showMoreDefault=false takes effect immediately
+        //   (not only after a reload). YT updates the title asynchronously → debounce per anchor.
+        const now = Date.now();
+        for (const exp of document.querySelectorAll<HTMLElement>(
+            `ytd-guide-collapsible-entry-renderer a[title="${lessTitle}"]`,
+        )) {
+            const last = collapsedAt.get(exp) ?? 0;
+            if (now - last < 1000) continue;
+            collapsedAt.set(exp, now);
+            exp.click();
         }
     }
     if (!g.showMoreButton) {
@@ -492,6 +519,8 @@ function guideEntriesRun(ctx: PageCtx): void {
         hiddenSections: hiddenSections.size,
         entries: entries.length,
     });
+    // * Success marker — set only after every mutation step completed (see the note above).
+    lastEntriesHash = hash;
 }
 
 /**
@@ -514,6 +543,10 @@ function guideEntriesRestore(): void {
         exp.removeAttribute("data-yt-tweaks-guide-expanded");
     }
     expandedExpanders.clear();
+    // * Group classification markers are DOM state too — restoreAll must leave no trace.
+    document.querySelectorAll<HTMLElement>(`[${SECTION_GROUP_ATTR}]`).forEach((sec) => {
+        sec.removeAttribute(SECTION_GROUP_ATTR);
+    });
     lastEntriesHash = "";
 }
 

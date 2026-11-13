@@ -78,6 +78,20 @@ describe("menuSidebarMode → hideHamburger + guide.visibility migration", () =>
         expect((result.styling.masthead as unknown as Record<string, unknown>).menuSidebarMode).toBeUndefined();
     });
 
+    it("migrates visibility when a guide object exists without visibility and preserves its fields", () => {
+        const saved = structuredClone(DEFAULT_SETTINGS) as unknown as Record<string, unknown>;
+        const masthead = (saved.styling as Record<string, unknown>).masthead as Record<string, unknown>;
+        masthead.menuSidebarMode = "hidden";
+        delete masthead.hideHamburger;
+        (saved as Record<string, unknown>).guide = { enabled: true, width: "large" };
+        mockGmGetValue(saved);
+
+        const result = loadSettings();
+        expect(result.guide.visibility).toBe("hide-forced");
+        expect(result.guide.enabled).toBe(true);
+        expect(result.guide.width).toBe("large");
+    });
+
     it("does not migrate when menuSidebarMode is absent (already migrated)", () => {
         const saved = structuredClone(DEFAULT_SETTINGS) as unknown as Record<string, unknown>;
         const masthead = (saved.styling as Record<string, unknown>).masthead as Record<string, unknown>;

@@ -847,16 +847,19 @@ export function loadSettings(): Settings {
             } else {
                 masthead.hideHamburger = false;
             }
-            // * guide.visibility is only set when the guide group does not exist yet
-            //   (already-saved guide settings are not overwritten).
-            if (!(saved as Record<string, unknown>).guide) {
-                if (oldMode === "hidden") {
-                    (saved as Record<string, unknown>).guide = { visibility: "hide-forced" };
-                } else if (oldMode === "toggle" || oldMode === "minimal") {
-                    (saved as Record<string, unknown>).guide = { visibility: "hide-override" };
-                } else {
-                    (saved as Record<string, unknown>).guide = { visibility: "default" };
-                }
+            // * guide.visibility is only set when it is not already persisted. A saved guide
+            //   group WITHOUT visibility (partial/older object) must still be migrated — and
+            //   its other fields (width, enabled, entries) must be preserved.
+            const savedGuideRaw = (saved as Record<string, unknown>).guide;
+            const savedGuide = isSettingsObject(savedGuideRaw) ? savedGuideRaw : undefined;
+            if (!savedGuide || typeof savedGuide.visibility !== "string") {
+                const visibility =
+                    oldMode === "hidden"
+                        ? "hide-forced"
+                        : oldMode === "toggle" || oldMode === "minimal"
+                          ? "hide-override"
+                          : "default";
+                (saved as Record<string, unknown>).guide = { ...(savedGuide ?? {}), visibility };
             }
             delete masthead.menuSidebarMode;
         }
