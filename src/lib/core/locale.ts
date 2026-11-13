@@ -1,3 +1,5 @@
+import { SCOPES, warnOnce } from "./log";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Constants — locale patterns (regex per locale, replacement via settings)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,7 +27,7 @@ export const LOCALE_PATTERNS: Record<string, LocalePattern> = {
         //   ! ANCHORED ^…$ (bug #3 fix): the old unanchored pattern matched bare numbers inside
         //     DATE texts ("vor 17 Std." → "17" → "17 Aufrufe" + leftover "Std."). The full-string
         //     anchor only matches texts that are views texts and nothing else.
-        views: { regex: /^\s*([\d.,]+)\s*(Mio\.|Tsd\.)?\s*(?:Aufrufe)?\s*$/u },
+        views: { regex: /^\s*([\d.,]+)\s*(Mrd\.|Mio\.|Tsd\.)?\s*(?:Aufrufe)?\s*$/u },
         viewsWord: "Aufrufe",
         date: [
             { key: "years", regex: /vor (\d+)\s*(Jahren|Jahr|Jhr\.)/ },
@@ -55,7 +57,7 @@ export const LOCALE_PATTERNS: Record<string, LocalePattern> = {
         //   ~ watch-page: bare number ("294,234") without "views" word — `(?:views)?` makes it optional.
         //   ! ANCHORED ^…$ (bug #3 fix) — see the de comment for the rationale.
         //   Unit accepts lowercase ("45k views" appears on some YT surfaces).
-        views: { regex: /^\s*([\d.,]+)\s*(M|K|k|m)?\s*(?:views)?\s*$/u },
+        views: { regex: /^\s*([\d.,]+)\s*(B|b|M|K|k|m)?\s*(?:views)?\s*$/u },
         viewsWord: "views",
         date: [
             // * ~ watch-page uses abbreviated forms: "15h ago" / "2d ago" / "1mo ago" / "1y ago".
@@ -91,7 +93,19 @@ export const DATE_FIXED_VALUES: Record<string, number> = {
  */
 export function detectLocale(): string {
     const lang = document.documentElement.lang;
-    if (!lang) return "de";
+    if (!lang) {
+        warnOnce(SCOPES.PAGE, "no-lang", "document.documentElement.lang is missing — falling back to de");
+        return "de";
+    }
     const base = lang.split("-")[0];
-    return LOCALE_PATTERNS[base] ? base : "de";
+    const detected = LOCALE_PATTERNS[base] ? base : "de";
+    if (detected !== base) {
+        warnOnce(
+            SCOPES.PAGE,
+            `unknown-locale:${base}`,
+            `no content patterns for locale "${base}" — falling back to de`,
+            { requested: base },
+        );
+    }
+    return detected;
 }

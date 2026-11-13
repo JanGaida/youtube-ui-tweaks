@@ -50,9 +50,13 @@ vi.mock("../../stores/settings.svelte", () => {
     return { store: { setByPath, save } };
 });
 
-vi.mock("../log", () => ({
-    default: { info: vi.fn(), error: vi.fn(), debug: vi.fn(), warn: vi.fn() },
-}));
+vi.mock("../log", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../log")>();
+    return {
+        ...actual,
+        default: { info: vi.fn(), error: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+    };
+});
 
 // * Import AFTER mocks are registered.
 import { applyToggleState, setTweaksEnabled, isTweaksEnabled } from "../system-toggle";

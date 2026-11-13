@@ -1,6 +1,6 @@
 import type { Settings } from "./settings";
 import { LOCALE_PATTERNS } from "./locale";
-import log from "./log";
+import log, { SCOPES, warnOnce } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Phase 4 — Ads/Content-Hiding (JS)
@@ -54,7 +54,8 @@ export function hideElement(el: HTMLElement): void {
 export function hideAds(settings: Settings, locale: string): void {
     const patterns = LOCALE_PATTERNS[locale];
     if (!patterns) {
-        log.warn("ads", `no patterns for locale "${locale}"`);
+        // * Once per locale/session — hideAds runs per observer pass.
+        warnOnce(SCOPES.ADS, `locale:${locale}`, `no patterns for locale "${locale}" — ads-hide skipped`, { locale });
         return;
     }
 
@@ -74,7 +75,8 @@ export function hideAds(settings: Settings, locale: string): void {
             );
             if (title && title.textContent?.trim().toLowerCase() === SHORTS_SHELF_TITLE) {
                 hideElement(el);
-                log.info("ads", "shorts-shelf hidden (title match)");
+                // * Per-element DOM action — debug, not info (can fire for many shelves per pass).
+                log.debug(SCOPES.ADS, "shorts shelf hidden", { kind: "shorts", tag: el.tagName });
             }
         });
     }
@@ -90,7 +92,7 @@ export function hideAds(settings: Settings, locale: string): void {
             if (el.dataset.ytTweaksHidden) return;
             if (textMatchesAds(el.textContent || "", patterns.adsText)) {
                 hideElement(el);
-                log.info("ads", "member-only (text) hidden", el.tagName);
+                log.debug(SCOPES.ADS, "member-only shelf hidden", { kind: "member-only", tag: el.tagName });
             }
         });
     }

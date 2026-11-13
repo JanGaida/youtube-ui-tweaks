@@ -1,6 +1,6 @@
 import type { Settings } from "./settings";
 import { detectLocale } from "./locale";
-import log from "./log";
+import log, { SCOPES, nextNavSeq, toErrorInfo } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: PageContext — YouTube SPA page detection + context snapshot
@@ -130,9 +130,23 @@ export function recomputePageCtx(): void {
     const next = buildPageCtx(prev.settings);
     // * Only notify when page or locale actually changed (avoids redundant re-dispatch).
     if (next.page !== prev.page || next.locale !== prev.locale) {
+        const navSeq = nextNavSeq();
         currentCtx = next;
-        log.debug("page", `pagechange ${prev.page}→${next.page} (locale ${prev.locale}→${next.locale})`);
-        for (const cb of listeners) cb(next);
+        log.debug(SCOPES.PAGE, "navigation", {
+            navSeq,
+            from: prev.page,
+            to: next.page,
+            localeFrom: prev.locale,
+            localeTo: next.locale,
+        });
+        // * A throwing listener must not silently break the rest of the dispatch chain.
+        for (const cb of listeners) {
+            try {
+                cb(next);
+            } catch (e) {
+                log.error(SCOPES.PAGE, "page-change listener failed", { navSeq, error: toErrorInfo(e) });
+            }
+        }
     }
 }
 

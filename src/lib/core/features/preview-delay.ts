@@ -1,7 +1,7 @@
 import type { Feature, ValidationError } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { PreviewDelaySettings } from "../settings";
-import log from "../log";
+import log, { SCOPES } from "../log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: preview-delay feature — delay the inline hover-preview player on grid items
@@ -134,7 +134,7 @@ function armItem(item: HTMLElement, delayMs: number): void {
             liftGate();
             gateLifted = true;
             item.setAttribute(MARKER_ATTR, MARKER_SHOWN);
-            log.debug("preview-delay", `gate lifted after ${delayMs}ms`);
+            log.debug(SCOPES.PREVIEW, "gate lifted", { delayMs });
         }, delayMs);
         pendingTimers.set(item, timer);
     };

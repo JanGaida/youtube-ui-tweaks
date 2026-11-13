@@ -1,4 +1,4 @@
-import log from "./log";
+import log, { SCOPES } from "./log";
 import type { GuideVisibility } from "./settings";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export class GuideSidebarStateMachine {
         if (!masthead) return;
         if (masthead.hasAttribute(ATTR)) {
             masthead.removeAttribute(ATTR);
-            log.debug("guide-sidebar", `removed ${ATTR}`);
+            log.debug(SCOPES.GUIDE, `removed ${ATTR}`);
         }
     }
 
@@ -113,7 +113,7 @@ export class GuideSidebarStateMachine {
         for (const a of DRAWER_ATTRS) {
             if (drawer.hasAttribute(a)) {
                 drawer.removeAttribute(a);
-                log.debug("guide-sidebar", `removed drawer attr ${a}`);
+                log.debug(SCOPES.GUIDE, `removed drawer attr ${a}`);
             }
         }
     }
@@ -152,10 +152,10 @@ export class GuideSidebarStateMachine {
         const present = masthead?.hasAttribute(ATTR) ?? false;
         if (this.state === "hide-override-closed" && present) {
             this.state = "hide-override-opened";
-            log.debug("guide-sidebar", "state: hide-override-closed → hide-override-opened (attr set by YT)");
+            log.debug(SCOPES.GUIDE, "state: hide-override-closed → hide-override-opened (attr set by YT)");
         } else if (this.state === "hide-override-opened" && !present) {
             this.state = "hide-override-closed";
-            log.debug("guide-sidebar", "state: hide-override-opened → hide-override-closed (attr removed by YT)");
+            log.debug(SCOPES.GUIDE, "state: hide-override-opened → hide-override-closed (attr removed by YT)");
         }
     }
 }

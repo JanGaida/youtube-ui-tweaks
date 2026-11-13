@@ -1,7 +1,7 @@
 import type { Feature } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { GuideSettings } from "../settings";
-import log from "../log";
+import log, { SCOPES } from "../log";
 import { detectGroupForSection, getGroupForEntry, SECTION_GROUP_ATTR } from "./guide-groups";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -487,10 +487,11 @@ function guideEntriesRun(ctx: PageCtx): void {
         }
     }
 
-    log.debug(
-        "guide-entries",
-        `applied: ${hiddenEls.size} entries hidden, ${hiddenSections.size} sections hidden, ${entries.length} entries + groups reordered`,
-    );
+    log.debug(SCOPES.GUIDE, "entries applied", {
+        hiddenEntries: hiddenEls.size,
+        hiddenSections: hiddenSections.size,
+        entries: entries.length,
+    });
 }
 
 /**

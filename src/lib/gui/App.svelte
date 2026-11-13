@@ -37,7 +37,7 @@
     import { getPanelPos, savePanelPos, getPanelUi, savePanelUi, type PanelUiState } from "../core/settings";
     import { applyToggleState } from "../core/system-toggle";
     import { applyAnonymize } from "../core/anonymize";
-    import { setLogLevel, LOG_LEVEL_LABELS, LOG_LEVEL } from "../core/log";
+    import { setLogLevel, getLogLevel } from "../core/log";
     import { STYLE_ID } from "../core/css";
     import { currentLocale, isObserverRunning } from "../core/observer";
     import { getPageCtx } from "../core/page";
@@ -121,7 +121,7 @@
         stats = {
             "Tweaks enabled": store.getByPath("system.tweaksEnabled") ? "yes" : "no (clean state)",
             Anonymize: store.getByPath("system.anonymize") ? "on" : "off",
-            "Active level": LOG_LEVEL_LABELS[LOG_LEVEL] ?? "info",
+            "Active level": getLogLevel(),
             Locale: currentLocale,
             Page: page,
             "Active features": activeFeatures,

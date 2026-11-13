@@ -8,7 +8,8 @@ import {
     flushLiveApply as registryFlushLiveApply,
     restoreAll as registryRestoreAll,
 } from "./registry";
-import log, { isDebugEnabled } from "./log";
+import log, { isDebugEnabled, SCOPES, nextRunId, withLogContext, toErrorInfo } from "./log";
+import { injectCSSString } from "./css";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Observer — thin dispatcher over the FeatureRegistry + PageContext
@@ -99,11 +100,12 @@ export function startObserver(): void {
     observer.observe(target, { childList: true, subtree: true, attributes: false });
     // ! yt-navigate-finish bonus (observer is primary)
     window.addEventListener("yt-navigate-finish", throttledRunAll);
-    log.debug("obs", `observer started on ${target.id ? "#" + target.id : "documentElement"}`);
+    log.info(SCOPES.OBSERVER, "observer started", { target: target.id ? `#${target.id}` : "documentElement" });
 }
 
 /** Stops the observer, removes the SPA navigation listener, and cancels any pending pass. */
 export function stopObserver(): void {
+    const wasRunning = observer !== null;
     if (observer) {
         observer.disconnect();
         observer = null;
@@ -111,10 +113,12 @@ export function stopObserver(): void {
     }
     // * Cancel the pending trailing-edge throttle pass too (see throttledRunAll) — runOnce's
     //   kill-switch gate covers the in-flight requestIdleCallback as a second line of defense.
+    const pendingCancelled = throttleTimer !== null;
     if (throttleTimer) {
         clearTimeout(throttleTimer);
         throttleTimer = null;
     }
+    if (wasRunning) log.info(SCOPES.OBSERVER, "observer stopped", { pendingThrottleCancelled: pendingCancelled });
 }
 
 /**
@@ -126,35 +130,47 @@ export function stopObserver(): void {
  */
 export function runAll(): void {
     if (!document.body) {
-        log.warn("run", "no document.body — skipping");
+        log.warn(SCOPES.RUN, "no document.body — skipping");
         return;
     }
-    if (!currentSettings) return;
+    if (!currentSettings) {
+        log.debug(SCOPES.RUN, "settings not loaded — skipping");
+        return;
+    }
     if (currentSettings.system.tweaksEnabled === false) {
-        log.debug("run", "tweaks disabled — skipping runAll");
+        log.debug(SCOPES.RUN, "tweaks disabled — skipping runAll");
         return;
     }
     let ctx: PageCtx;
     try {
         ctx = getPageCtx();
-    } catch {
+    } catch (e) {
         // * PageContext not initialized yet (early boot) — build an ad-hoc ctx.
+        log.debug(SCOPES.RUN, "PageContext unavailable — using ad-hoc context", { error: toErrorInfo(e) });
         ctx = buildPageCtx(currentSettings);
     }
     const runCtx = { ...ctx, settings: currentSettings };
+    const runId = nextRunId();
     const t0 = isDebugEnabled() ? performance.now() : 0;
-    registryRunAll(runCtx);
-    // * Debug-status queries (marker counts) run ONLY in debug mode — two full-document
-    //   querySelectorAll per observer tick are pure overhead at info level.
-    if (isDebugEnabled()) {
-        const textCount = document.querySelectorAll('[data-yt-tweaked="1"]').length;
-        const hiddenCount = document.querySelectorAll("[data-yt-tweaks-hidden]").length;
-        log.debug("run", `done in ${(performance.now() - t0).toFixed(1)}ms`, {
-            page: runCtx.page,
-            textShortened: textCount,
-            adsHidden: hiddenCount,
-        });
-    }
+
+    withLogContext({ runId, page: runCtx.page, locale: runCtx.locale }, () => {
+        try {
+            registryRunAll(runCtx);
+        } catch (e) {
+            log.error(SCOPES.RUN, "dispatch failed", { error: toErrorInfo(e) });
+        }
+        // * Debug-status queries (marker counts) run ONLY in debug mode — two full-document
+        //   querySelectorAll per observer tick are pure overhead at info level.
+        if (isDebugEnabled()) {
+            const textCount = document.querySelectorAll('[data-yt-tweaked="1"]').length;
+            const hiddenCount = document.querySelectorAll("[data-yt-tweaks-hidden]").length;
+            log.debug(SCOPES.RUN, "dispatch done", {
+                durationMs: Number((performance.now() - t0).toFixed(1)),
+                textShortened: textCount,
+                adsHidden: hiddenCount,
+            });
+        }
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,7 +186,10 @@ export function applyAllLive(settings: Settings): void {
     let ctx: PageCtx;
     try {
         ctx = getPageCtx();
-    } catch {
+    } catch (e) {
+        log.debug(SCOPES.RUN, "PageContext unavailable for live-apply — using ad-hoc context", {
+            error: toErrorInfo(e),
+        });
         ctx = buildPageCtx(settings);
     }
     const liveCtx = { ...ctx, settings };
@@ -192,12 +211,10 @@ export function restoreAndRunAll(settings: Settings): void {
     runAll();
 }
 
-/** Generates CSS via the registry and injects it via applyCSS. */
+/** Generates CSS via the registry and injects it via the shared injector. */
 function applyCSSFromRegistry(ctx: PageCtx): void {
     const css = registryGenerateCSS(ctx.settings, ctx);
-    // * applyCSS expects a Settings arg and generates internally; we bypass by calling the
-    //   injector directly with the registry-produced string.
-    injectCSS(css);
+    injectCSSString(css);
 }
 
 /**
@@ -215,10 +232,13 @@ export function scheduleLiveApply(settings: Settings, changedKey?: string): void
     let ctx: PageCtx;
     try {
         ctx = getPageCtx();
-    } catch {
+    } catch (e) {
+        log.debug(SCOPES.RUN, "PageContext unavailable for live-apply — using ad-hoc context", {
+            error: toErrorInfo(e),
+        });
         ctx = buildPageCtx(settings);
     }
-    registryScheduleLiveApply(settings, changedKey, ctx, (css) => injectCSS(css));
+    registryScheduleLiveApply(settings, changedKey, ctx, (css) => injectCSSString(css));
 }
 
 /** Flushes any pending debounced live-apply immediately (used on save/import). */
@@ -227,30 +247,11 @@ export function flushLiveApply(): void {
     let ctx: PageCtx;
     try {
         ctx = getPageCtx();
-    } catch {
+    } catch (e) {
+        log.debug(SCOPES.RUN, "PageContext unavailable for live-apply flush — using ad-hoc context", {
+            error: toErrorInfo(e),
+        });
         ctx = buildPageCtx(currentSettings);
     }
-    registryFlushLiveApply(currentSettings, ctx, (css) => injectCSS(css));
-}
-
-/**
- * Injects (or updates) the tweak stylesheet with the given CSS string.
- *
- * @param css - The CSS string to inject.
- */
-function injectCSS(css: string): void {
-    let el = document.getElementById("yt-tweaks-css") as HTMLStyleElement | null;
-    if (el) {
-        el.textContent = css;
-        return;
-    }
-    el = document.createElement("style");
-    el.id = "yt-tweaks-css";
-    el.textContent = css;
-    const mount = document.head || document.documentElement;
-    if (!mount) {
-        log.error("css", "no mount point (document.head & documentElement null)");
-        return;
-    }
-    mount.appendChild(el);
+    registryFlushLiveApply(currentSettings, ctx, (css) => injectCSSString(css));
 }

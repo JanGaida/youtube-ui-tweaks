@@ -11,7 +11,7 @@ import {
     SETTINGS_ICON,
 } from "./mastheadIcons";
 import { openSettings } from "../app/panel";
-import log from "./log";
+import log, { SCOPES } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Phase 4b — Masthead (Topbar) JS-Mutation
@@ -174,10 +174,10 @@ function hideNotificationIfEmpty(): void {
         if (!hasNotif && !currentlyHidden) {
             el.setAttribute(NOTIF_EMPTY_ATTR, "");
             markMasthead(el, "notification-empty");
-            log.debug("masthead", "notification hidden (empty — title has no count)");
+            log.debug(SCOPES.MASTHEAD, "notification hidden (empty — title has no count)");
         } else if (hasNotif && currentlyHidden) {
             el.removeAttribute(NOTIF_EMPTY_ATTR);
-            log.debug("masthead", "notification shown (title indicates count)");
+            log.debug(SCOPES.MASTHEAD, "notification shown (title indicates count)");
         }
     });
 }
@@ -237,16 +237,16 @@ function buildMastheadButton(def: ButtonDef, locale: string, buttonSpacing: stri
         e.preventDefault();
         if (def.isSettings) {
             openSettings();
-            log.debug("masthead", `settings panel opened via masthead button`);
+            log.debug(SCOPES.MASTHEAD, "settings panel opened via masthead button");
             return;
         }
         const guideLink = document.querySelector<HTMLAnchorElement>(`a.yt-simple-endpoint[href="${def.href}"]`);
         if (guideLink) {
             guideLink.click();
-            log.debug("masthead", `${label} navigated via guide-link to ${def.href}`);
+            log.debug(SCOPES.MASTHEAD, "navigated via guide-link", { label, href: def.href });
         } else {
             window.location.href = def.href;
-            log.debug("masthead", `${label} fallback nav to ${def.href}`);
+            log.debug(SCOPES.MASTHEAD, "fallback nav", { label, href: def.href });
         }
     });
 
