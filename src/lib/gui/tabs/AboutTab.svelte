@@ -11,7 +11,7 @@
     import { EXTERNAL_ICON, SUB_ICONS } from "../icons";
     import { changelogFor, decodeChangelog, parseChangelog } from "../about-changelog";
     import { t } from "../i18n.svelte";
-    import log, { isDebugEnabled } from "../../core/log";
+    import log, { isDebugEnabled, SCOPES } from "../../core/log";
 
     // * GM_info fields read beyond the typed subset (diagnostic snapshot only — optional
     //   per the Tampermonkey docs, absent under some handlers).
@@ -99,7 +99,7 @@
             },
             serialized: JSON.stringify(gm, null, 2),
         };
-        log.debug("about", "GM_info snapshot (About opened)", payload);
+        log.debug(SCOPES.GUI, "GM_info snapshot (About opened)", { feature: "about", ...payload });
     });
 </script>
 

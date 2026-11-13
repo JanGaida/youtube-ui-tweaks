@@ -1,6 +1,7 @@
 import { validateSettings } from "../core/registry";
 import type { ValidationError } from "../core/feature.types";
 import type { Settings } from "../core/settings";
+import log, { SCOPES } from "../core/log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: ValidationStore (Svelte 5 Runes) — reactive settings validation
@@ -25,6 +26,9 @@ class ValidationStore {
         const next: Record<string, ValidationError> = {};
         for (const err of result) {
             next[err.path] = err;
+        }
+        if (result.length > 0) {
+            log.debug(SCOPES.SETTINGS, "validation errors", { errors: result });
         }
         this.errors = next;
     }

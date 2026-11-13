@@ -20,7 +20,7 @@ Built with **Svelte 5 (Runes) + TypeScript**, bundled by **Vite + vite-plugin-mo
 | Typecheck          | `svelte-check` + `tsc` (combined in `npm run check`; includes the test files via `tsconfig.json`)                         |
 | Docs gate          | `npm run docs:check` — `scripts/check-docs.mjs` (coverage, references, Verified footers)                                  |
 | Format             | Prettier (4-space, double-quote) — `npm run format` / `format:check`                                                      |
-| Test               | Vitest 4 (pure-logic `node` env + DOM/fixture `jsdom` env, ~373 tests in 29 files) — `npm run test`                       |
+| Test               | Vitest 4 (pure-logic `node` env + DOM/fixture `jsdom` env, ~460 tests in 38 files) — `npm run test`                       |
 | E2E                | Playwright (Firefox — Zielplatform) against hosted fixtures + live-YouTube capture task — `npm run test:e2e` (local-only) |
 
 ### Commands
@@ -28,7 +28,7 @@ Built with **Svelte 5 (Runes) + TypeScript**, bundled by **Vite + vite-plugin-mo
 ```bash
 npm install        # install deps
 npm run check      # svelte-check + tsc — typecheck gate (must be green before commit; includes tests)
-npm test           # vitest run — pure-logic + jsdom fixture tests (~373 tests, 29 files)
+npm test           # vitest run — pure-logic + jsdom fixture tests (~460 tests, 38 files)
 npm run test:watch # vitest — watch mode (re-runs on change, never exits)
 npm run test:e2e   # playwright test — E2E against locally hosted fixtures (needs `npm run build`)
 npm run test:e2e:ui # playwright --ui — interactive E2E debugging (time-travel, watch mode)
@@ -59,7 +59,7 @@ src/
 └── lib/
     ├── app/panel.ts             # openSettings/closeSettings — panel orchestration (mount/unmount)
     ├── core/                     # Framework-free logic (pure TS, no DOM framework)
-    │   ├── log.ts                # Logger (LOG_LEVELS, setLogLevel, log, isDebugEnabled)
+    │   ├── log.ts                # Structured logger (levels, SCOPES, correlation, ring buffer, warnOnce)
     │   ├── settings.ts           # DEFAULT_SETTINGS + types + GM_setValue/getValue persistence + migrations
     │   ├── locale.ts             # LOCALE_PATTERNS (content-matching regex, de/en) + detectLocale
     │   ├── css.ts                # CSS generation + injection (STYLE_ID, applyCSS)
@@ -75,7 +75,7 @@ src/
     │   ├── system-toggle.ts      # Kill-switch (system.tweaksEnabled)
     │   ├── anonymize.ts          # Blur layer (system.anonymize, own <style>)
     │   ├── guide-sidebar-state.ts # FSM for guide-sidebar visibility (hide-override/hide-forced)
-    │   ├── features/             # 19 feature files + index.ts (registerAllFeatures — 16 features)
+    │   ├── features/             # 19 feature files + index.ts (registerAllFeatures — 17 features)
     │   │   ├── index.ts          # registerAllFeatures() + getComposedDefaults()
     │   │   ├── grid-styling.ts   # Title/meta typography presets, avatar, menu button
     │   │   ├── auto-sync-badge.ts # Badge integrate/hide modes
@@ -153,11 +153,12 @@ The codebase has two clearly separated concerns:
 ```
 @run-at document-start
   │
-  ├─ registerAllFeatures()     # 16 features register BEFORE CSS (registry generates the CSS)
-  ├─ store.load()              # Load settings from GM_getValue (try/catch → defaults)
+  ├─ setLogLevel(readStoredLogLevel())  # Persisted debug.logLevel BEFORE any load/migration log
+  ├─ registerAllFeatures()     # 17 features register BEFORE CSS (registry generates the CSS)
+  ├─ store.load()              # Load settings from GM_getValue (try/catch → defaults + migration logs)
+  ├─ setLogLevel(settings.debug.logLevel)  # Re-apply the authoritative loaded level
   ├─ initPageContext(settings, callback)  # PageCtx + SPA listeners (yt-navigate-finish, popstate)
   ├─ detectLocale()            # YouTube content language (document.documentElement.lang)
-  ├─ setLogLevel()             # Apply debug.logLevel
   └─ applyCSS()                # Inject <style> immediately (before page renders — avoids FOUC)
        │                        (skipped when system.tweaksEnabled === false)
        ▼
@@ -260,7 +261,7 @@ Separate from GUI i18n. Requires verifying the actual YouTube UI strings in that
 
 ## Testing
 
-Two test layers via Vitest (29 test files, ~373 tests), plus a Playwright E2E layer, plus manual verification for the rest.
+Two test layers via Vitest (38 test files, ~460 tests), plus a Playwright E2E layer, plus manual verification for the rest.
 
 - **Pure-logic tests** (`node` env): `formatViewsNumber`, `detectPage`, CSS string builders, registry dispatch. No DOM.
 - **DOM/fixture tests** (`jsdom` env, per-file `// @vitest-environment jsdom`): run selectors and feature transforms against captured YouTube DOM snippets in `src/lib/core/__fixtures__/`. Guard selector regressions (YT DOM changes → test rot). Fixtures are **gitignored** (privacy — see [Fixture Capture](#fixture-capture-dev-only)), so these suites wrap themselves in `describe.skipIf(!fixtureExists(...))` (helper: `__tests__/fixture-harness.ts`) and skip green on a fresh clone.

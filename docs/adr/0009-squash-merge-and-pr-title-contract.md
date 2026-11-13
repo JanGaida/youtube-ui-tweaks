@@ -1,6 +1,6 @@
 # ADR 0009: Squash-only merges with Conventional-Commits PR titles
 
-- Status: accepted (2026-10-25)
+- Status: accepted (2026-10-25; amended 2026-11-10 — commit type → changelog visibility)
 - Deciders: human + agent session
 - Applies to: repository merge settings, pull requests, `AGENTS.md`, `.github/PULL_REQUEST_TEMPLATE.md`
 
@@ -31,6 +31,20 @@ PRs, since self-approval is impossible.
    and deletions blocked.
 4. **Release PRs are unaffected**: release-please detects its merged PRs by label and title, not
    by commit structure — squash-merging `chore(main): release X.Y.Z` is fully supported.
+5. **The commit type decides changelog visibility.** `release-please-config.json` configures no
+   `changelog-sections`, so release-please's defaults apply:
+
+    | Type                                                        | Changelog section        |
+    | ----------------------------------------------------------- | ------------------------ |
+    | `feat`                                                      | Features                 |
+    | `fix`                                                       | Bug Fixes                |
+    | `perf`                                                      | Performance Improvements |
+    | `revert`                                                    | Reverts                  |
+    | `build`, `chore`, `ci`, `docs`, `style`, `refactor`, `test` | omitted                  |
+
+    A `!` breaking marker is only surfaced through a visible type (`feat!`/`fix!`); a breaking
+    `refactor!`/`chore!` disappears from the changelog. The mapping changes only when
+    `changelog-sections` is configured — then update this table and the `AGENTS.md` bullet.
 
 **Rule of thumb:** write PR titles like commit messages — they become the commit.
 
@@ -50,6 +64,9 @@ PRs, since self-approval is impossible.
   the guard, discipline the mechanism.
 - Review-free protection is by design; adding a second maintainer requires revisiting
   decision 3.
+- Hidden types never reach the changelog: a user-visible change titled `refactor` or `chore`
+  is missing from the release notes — the type decision happens at PR-title time, not at
+  release time.
 
 ## References
 

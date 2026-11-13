@@ -1,3 +1,5 @@
+import log, { LOG_LEVELS, SCOPES, toErrorInfo, type SettingsLogLevel } from "./log";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Constants — default settings + persistence
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,6 +10,16 @@ export const SETTINGS_KEY = "ytTweaksSettings";
 export const PANEL_POS_KEY = "ytTweaksPanelPos";
 /** GM storage key for the persisted panel UI state (active category + scroll position). */
 export const PANEL_UI_KEY = "ytTweaksPanelUi";
+
+/**
+ * Dot-paths of dynamic boolean record maps (arbitrary keys → boolean).
+ *
+ * ! The schema-driven merge (deepMerge/deepMergeSettings) only copies keys that already exist
+ *   in the defaults. These maps default to `{}`, so their saved keys (guide entry/group hide
+ *   flags) would be dropped on every load/import without the explicit pass in
+ *   mergeDynamicBooleanMaps() — the guide sidebar reappears after a reload.
+ */
+const DYNAMIC_BOOLEAN_MAP_PATHS: readonly string[] = ["guide.entries.hidden", "guide.entries.groups.hidden"];
 
 /** Avatar (channel icon) styling settings for grid items. */
 export interface AvatarSettings {
@@ -709,16 +721,55 @@ export const DEFAULT_SETTINGS: Settings = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Reads a dot-path from a nested object.
+ *
+ * @param root - The object to traverse.
+ * @param path - Dot-notation path (e.g. "guide.entries.hidden").
+ * @returns The value at the path, or undefined when a segment is missing/not an object.
+ */
+function getAtPath(root: unknown, path: string): unknown {
+    let cur: unknown = root;
+    for (const part of path.split(".")) {
+        if (!isSettingsObject(cur)) return undefined;
+        cur = cur[part];
+    }
+    return cur;
+}
+
+/**
+ * Copies saved keys of the dynamic boolean record maps into the merged settings.
+ *
+ * ! Schema safety stays intact: only these allowlisted paths accept unknown keys, and only
+ *   boolean values are copied (junk values are ignored). All other unknown keys are still
+ *   dropped by the schema-driven merge.
+ *
+ * @param target - The merged settings object (mutated in place).
+ * @param saved  - The persisted object.
+ */
+function mergeDynamicBooleanMaps(target: unknown, saved: unknown): void {
+    for (const path of DYNAMIC_BOOLEAN_MAP_PATHS) {
+        const savedMap = getAtPath(saved, path);
+        const targetMap = getAtPath(target, path);
+        if (!isSettingsObject(savedMap) || !isSettingsObject(targetMap)) continue;
+        for (const [key, value] of Object.entries(savedMap)) {
+            if (typeof value === "boolean") targetMap[key] = value;
+        }
+    }
+}
+
+/**
  * Deep-merges saved values over defaults, recursively to arbitrary depth.
  *
  * Missing or non-object saved values fall back to the default. Array defaults are not recursed
- * (the saved scalar wins, if present).
+ * (the saved scalar wins, if present). Dynamic boolean maps (DYNAMIC_BOOLEAN_MAP_PATHS) are
+ * merged explicitly — their keys do not exist in the defaults.
  *
  * @param defaults - The default object (drives which keys are valid).
  * @param saved    - The persisted object (may be partial / malformed).
+ * @param isRoot   - Internal: only the root call merges the full-path dynamic maps.
  * @returns A new object of type T with defaults overridden by valid saved values.
  */
-export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
+export function deepMergeSettings<T>(defaults: T, saved: unknown, isRoot = true): T {
     const out: Record<string, unknown> = {};
     for (const key of Object.keys(defaults as Record<string, unknown>)) {
         const dv = (defaults as Record<string, unknown>)[key];
@@ -730,12 +781,44 @@ export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
                 ? (saved as Record<string, unknown>)[key]
                 : undefined;
         if (dv && typeof dv === "object" && !Array.isArray(dv)) {
-            out[key] = deepMergeSettings(dv, sv && typeof sv === "object" ? sv : {});
+            out[key] = deepMergeSettings(dv, sv && typeof sv === "object" ? sv : {}, false);
         } else {
             out[key] = sv !== undefined ? sv : dv;
         }
     }
+    if (isRoot) mergeDynamicBooleanMaps(out, saved);
     return out as T;
+}
+
+/**
+ * Type guard for a persisted/imported settings payload: a plain object, never null or an array.
+ *
+ * @param value - The parsed JSON value.
+ * @returns True when the value can be deep-merged into the settings.
+ */
+export function isSettingsObject(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Reads the persisted `debug.logLevel` directly from GM storage without a full settings load.
+ *
+ * Used at boot to apply the stored level BEFORE `loadSettings()` runs, so settings-load and
+ * migration logs are visible when the user selected debug/info. Never throws — corrupt storage
+ * falls back to "silent" (loadSettings reports the corruption once it runs).
+ *
+ * @returns The stored level label, or "silent" when absent/invalid.
+ */
+export function readStoredLogLevel(): SettingsLogLevel {
+    try {
+        const raw = GM_getValue(SETTINGS_KEY, "{}");
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const label = (parsed as { debug?: { logLevel?: unknown } } | null)?.debug?.logLevel;
+        if (typeof label === "string" && label in LOG_LEVELS) return label as SettingsLogLevel;
+    } catch {
+        // * Handled (and logged) by loadSettings — keep the pre-read silent.
+    }
+    return "silent";
 }
 
 /**
@@ -746,8 +829,27 @@ export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
  * @returns A fully-formed Settings object.
  */
 export function loadSettings(): Settings {
+    const applied: string[] = [];
     const savedStr = GM_getValue(SETTINGS_KEY, "{}");
-    const saved = JSON.parse(savedStr);
+    let saved: Record<string, unknown>;
+    try {
+        const parsed = typeof savedStr === "string" ? JSON.parse(savedStr) : savedStr;
+        if (!isSettingsObject(parsed)) {
+            log.warn(SCOPES.SETTINGS, "stored settings have an unexpected shape — using defaults", {
+                kind: Array.isArray(parsed) ? "array" : typeof parsed,
+            });
+            saved = {};
+        } else {
+            saved = parsed;
+        }
+    } catch (e) {
+        log.error(SCOPES.SETTINGS, "stored settings JSON is invalid — using defaults (stored value kept)", {
+            key: SETTINGS_KEY,
+            rawLength: typeof savedStr === "string" ? savedStr.length : -1,
+            error: toErrorInfo(e),
+        });
+        saved = {};
+    }
     const defaults: Settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 
     // * MIGRATION highlightUnseen → dimWatched (one-time, if dimWatched is not yet saved).
@@ -758,6 +860,7 @@ export function loadSettings(): Settings {
         (saved as Record<string, unknown>).highlightUnseen &&
         !(saved as Record<string, unknown>).dimWatched
     ) {
+        applied.push("highlightUnseen→dimWatched");
         const old = (saved as Record<string, unknown>).highlightUnseen as Record<string, unknown>;
         const oldBrightness = typeof old.brightness === "string" ? old.brightness : "medium";
         (saved as Record<string, unknown>).dimWatched = {
@@ -786,6 +889,7 @@ export function loadSettings(): Settings {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         const masthead = styling.masthead as Record<string, unknown> | undefined;
         if (masthead && typeof masthead.menuSidebarMode === "string") {
+            applied.push("menuSidebarMode→hideHamburger+guide.visibility");
             const oldMode = masthead.menuSidebarMode;
             // * hideHamburger is ALWAYS migrated from the old mode (masthead configuration).
             if (oldMode === "hidden") {
@@ -793,16 +897,19 @@ export function loadSettings(): Settings {
             } else {
                 masthead.hideHamburger = false;
             }
-            // * guide.visibility is only set when the guide group does not exist yet
-            //   (already-saved guide settings are not overwritten).
-            if (!(saved as Record<string, unknown>).guide) {
-                if (oldMode === "hidden") {
-                    (saved as Record<string, unknown>).guide = { visibility: "hide-forced" };
-                } else if (oldMode === "toggle" || oldMode === "minimal") {
-                    (saved as Record<string, unknown>).guide = { visibility: "hide-override" };
-                } else {
-                    (saved as Record<string, unknown>).guide = { visibility: "default" };
-                }
+            // * guide.visibility is only set when it is not already persisted. A saved guide
+            //   group WITHOUT visibility (partial/older object) must still be migrated — and
+            //   its other fields (width, enabled, entries) must be preserved.
+            const savedGuideRaw = (saved as Record<string, unknown>).guide;
+            const savedGuide = isSettingsObject(savedGuideRaw) ? savedGuideRaw : undefined;
+            if (!savedGuide || typeof savedGuide.visibility !== "string") {
+                const visibility =
+                    oldMode === "hidden"
+                        ? "hide-forced"
+                        : oldMode === "toggle" || oldMode === "minimal"
+                          ? "hide-override"
+                          : "default";
+                (saved as Record<string, unknown>).guide = { ...(savedGuide ?? {}), visibility };
             }
             delete masthead.menuSidebarMode;
         }
@@ -819,6 +926,7 @@ export function loadSettings(): Settings {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         const masthead = styling.masthead as Record<string, unknown> | undefined;
         if (masthead && typeof masthead.searchButton === "string") {
+            applied.push("masthead.searchButton→hideSearchButton");
             masthead.hideSearchButton = masthead.searchButton === "hide";
             delete masthead.searchButton;
         }
@@ -836,6 +944,7 @@ export function loadSettings(): Settings {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         const menuButton = styling.menuButton as Record<string, unknown> | undefined;
         if (menuButton && "margin" in menuButton) {
+            applied.push("menuButton.margin removed");
             delete menuButton.margin;
         }
     }
@@ -855,6 +964,7 @@ export function loadSettings(): Settings {
     ) {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         if (typeof styling.titleFontSize === "string" || typeof styling.metaFontSize === "string") {
+            applied.push("styling rem→preset enums");
             const rem = (v: unknown): number | null => {
                 if (typeof v !== "string") return null;
                 // * Accept only pure rem values — other units (px, garbage) are not a valid
@@ -921,6 +1031,7 @@ export function loadSettings(): Settings {
     ) {
         const textShorten = (saved as Record<string, unknown>).textShorten as Record<string, unknown>;
         if ("viewsText" in textShorten) {
+            applied.push("textShorten.viewsText→viewsWordMode");
             textShorten.viewsWordMode =
                 typeof textShorten.viewsText === "string" && textShorten.viewsText !== "" ? "locale" : "none";
             delete textShorten.viewsText;
@@ -942,6 +1053,7 @@ export function loadSettings(): Settings {
         const guide = (saved as Record<string, unknown>).guide as Record<string, unknown>;
         const w = guide.width;
         if (w && typeof w === "object" && !Array.isArray(w)) {
+            applied.push("guide.width→preset");
             const wo = w as Record<string, unknown>;
             const full = typeof wo.full === "number" ? (wo.full as number) : 0;
             let preset: GuideWidthPreset;
@@ -968,6 +1080,7 @@ export function loadSettings(): Settings {
         const startpage = (saved as Record<string, unknown>).startpage as Record<string, unknown>;
         const map: Record<string, string> = { small: "2", large: "4", xlarge: "5" };
         if (typeof startpage.columnsPreset === "string" && startpage.columnsPreset in map) {
+            applied.push("startpage columns adjective→numeric");
             startpage.columnsPreset = map[startpage.columnsPreset];
         }
     }
@@ -1001,6 +1114,7 @@ export function loadSettings(): Settings {
         ].some((k) => typeof ads[k] === "boolean");
         const hasNested = !!ads.promo || !!ads.shelves || !!ads.survey;
         if (hasFlatFlag && !hasNested) {
+            applied.push("ads flat→nested groups");
             const b = (k: string): boolean | undefined =>
                 typeof ads[k] === "boolean" ? (ads[k] as boolean) : undefined;
             ads.promo = {
@@ -1047,6 +1161,7 @@ export function loadSettings(): Settings {
     ) {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         if (typeof styling.titleMaxLines === "number") {
+            applied.push("styling.titleMaxLines number→string");
             styling.titleMaxLines = String(styling.titleMaxLines);
         }
     }
@@ -1063,6 +1178,7 @@ export function loadSettings(): Settings {
     ) {
         const feedChips = (saved as Record<string, unknown>).feedChips as Record<string, unknown>;
         if (feedChips.layout === "stack") {
+            applied.push("feedChips.layout stack→collapse");
             feedChips.layout = "collapse";
         }
     }
@@ -1077,6 +1193,7 @@ export function loadSettings(): Settings {
         const sysObj = sys && typeof sys === "object" ? (sys as Record<string, unknown>) : undefined;
         const hasTweaksEnabled = sysObj && typeof sysObj.tweaksEnabled === "boolean";
         if (!hasTweaksEnabled) {
+            applied.push("ytTweaksEnabled→system.tweaksEnabled");
             // * Default true, if the old GM key was never set (GM_getValue returns "true").
             const legacy: string = GM_getValue("ytTweaksEnabled", "true");
             const tweaksEnabled = legacy !== "false";
@@ -1109,16 +1226,38 @@ export function loadSettings(): Settings {
         return target;
     }
 
-    return deepMerge(defaults as unknown as Record<string, unknown>, saved) as unknown as Settings;
+    if (applied.length > 0) {
+        log.info(SCOPES.SETTINGS, "migrations applied", { migrations: applied });
+    }
+
+    const merged = deepMerge(defaults as unknown as Record<string, unknown>, saved) as unknown as Settings;
+    // * ! After the schema merge: dynamic maps have no default keys, so their saved keys must
+    //   be copied explicitly (otherwise every guide hide flag is lost on reload).
+    mergeDynamicBooleanMaps(merged, saved);
+    return merged;
 }
 
 /**
  * Persists the given settings to GM storage as JSON.
  *
+ * Logs success at debug and failures at error (with a rethrow, so the store can decide how to
+ * surface a quota/manager failure). Never swallows the exception.
+ *
  * @param obj - The settings object to store.
  */
 export function saveSettings(obj: Settings): void {
-    GM_setValue(SETTINGS_KEY, JSON.stringify(obj));
+    const json = JSON.stringify(obj);
+    try {
+        GM_setValue(SETTINGS_KEY, json);
+        log.debug(SCOPES.SETTINGS, "settings persisted", { key: SETTINGS_KEY, chars: json.length });
+    } catch (e) {
+        log.error(SCOPES.SETTINGS, "persist failed — changes are in memory only", {
+            key: SETTINGS_KEY,
+            chars: json.length,
+            error: toErrorInfo(e),
+        });
+        throw e;
+    }
 }
 
 /** Persisted settings-panel position (pixel coordinates from drag/resize + save timestamp). */

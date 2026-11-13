@@ -1,14 +1,14 @@
 import type { Settings } from "./settings";
 import { generateCSS as registryGenerateCSS } from "./registry";
 import { buildPageCtx } from "./page";
-import log from "./log";
+import log, { SCOPES } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: CSS injection — boot-time + registry-delegated generation
 // ─────────────────────────────────────────────────────────────────────────────
-// * generateCSS now delegates to the FeatureRegistry (aggregates per-feature css behaviors for
-//   the current page). applyCSS is the boot-time injector (document-start safe). Runtime
-//   re-injection is handled by observer.injectCSS (registry-produced string).
+// * generateCSS delegates to the FeatureRegistry (aggregates per-feature css behaviors for
+//   the current page). injectCSSString is the single DOM injector shared by the boot path
+//   (applyCSS) and runtime re-injection (observer.ts via the registry).
 
 /** DOM id of the injected `<style>` element holding all generated tweak CSS rules. */
 export const STYLE_ID = "yt-tweaks-css";
@@ -27,32 +27,42 @@ export function generateCSS(settings: Settings): string {
 }
 
 /**
- * Injects (or updates) the `<style>` element with the generated CSS.
+ * Injects (or updates) the `<style>` element with the given CSS string.
  *
  * Safe at `document-start`: falls back to `document.documentElement` when `document.head` is
  * absent. Uses `textContent` (Trusted-Types-safe, never `innerHTML`).
  *
- * @param settings - The current settings.
+ * @param css - The CSS string to inject.
+ * @param id  - DOM id of the style element (defaults to {@link STYLE_ID}).
  */
-export function applyCSS(settings: Settings): void {
-    const css = generateCSS(settings);
-    let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+export function injectCSSString(css: string, id: string = STYLE_ID): void {
+    let el = document.getElementById(id) as HTMLStyleElement | null;
     if (el) {
         el.textContent = css;
+        log.debug(SCOPES.CSS, `style#${id} updated`, { chars: css.length });
         return;
     }
     el = document.createElement("style");
-    el.id = STYLE_ID;
+    el.id = id;
     el.textContent = css;
     // ! document.head may be null at document-start → documentElement fallback
     const mount = document.head || document.documentElement;
     if (!mount) {
-        log.error("css", "no mount point (document.head & documentElement null)");
+        log.error(SCOPES.CSS, "no mount point (document.head & documentElement null)", { id });
         return;
     }
     mount.appendChild(el);
-    log.debug(
-        "css",
-        `style#${STYLE_ID} mounted on ${mount === document.head ? "head" : "documentElement"} (${css.length} chars)`,
-    );
+    log.debug(SCOPES.CSS, `style#${id} mounted`, {
+        mount: mount === document.head ? "head" : "documentElement",
+        chars: css.length,
+    });
+}
+
+/**
+ * Generates the CSS for the given settings and injects it.
+ *
+ * @param settings - The current settings.
+ */
+export function applyCSS(settings: Settings): void {
+    injectCSSString(generateCSS(settings), STYLE_ID);
 }

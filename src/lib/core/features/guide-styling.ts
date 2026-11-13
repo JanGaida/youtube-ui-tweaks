@@ -1,7 +1,7 @@
 import type { Feature } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { GuideSettings, GuideWidthPreset } from "../settings";
-import log from "../log";
+import log, { SCOPES } from "../log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: guide-styling feature — guide pane width (enum presets) + icon visibility
@@ -133,7 +133,7 @@ function guideStylingRun(ctx: PageCtx): void {
     for (const r of document.querySelectorAll<HTMLElement>(RENDERER_SEL)) {
         r.setAttribute(WIDTH_ATTR, String(px));
     }
-    log.debug("guide-styling", `${preset} (${px}px): applied width (content offset via CSS :has)`);
+    log.debug(SCOPES.GUIDE, "width applied", { preset, px });
 }
 
 /**

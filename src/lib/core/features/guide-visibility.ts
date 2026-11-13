@@ -2,7 +2,7 @@ import type { Feature } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { GuideSettings, GuideVisibility } from "../settings";
 import { guideSidebarFSM } from "../guide-sidebar-state";
-import log from "../log";
+import log, { SCOPES } from "../log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: guide-visibility feature — guide-pane visibility (CSS + FSM)
@@ -40,7 +40,7 @@ let fallbackLogged = false;
 function logFallback(): void {
     if (fallbackLogged) return;
     fallbackLogged = true;
-    log.debug("guide-sidebar", "conflict: hideHamburger=true + hide-override → fallback to hide-forced");
+    log.debug(SCOPES.GUIDE, "conflict: hideHamburger=true + hide-override → fallback to hide-forced");
 }
 
 /**

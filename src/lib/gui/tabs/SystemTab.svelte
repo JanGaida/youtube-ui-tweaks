@@ -10,7 +10,9 @@
     import Select from "../components/Select.svelte";
     import Stepper from "../components/Stepper.svelte";
     import Switch from "../components/Switch.svelte";
-    import { setLogLevel, LOG_LEVEL_LABELS } from "../../core/log";
+    import log, { setLogLevel, LOG_LEVEL_LABELS, getRecentLogs, getLogLevel, SCOPES } from "../../core/log";
+    import { detectLocale } from "../../core/locale";
+    import { getPageCtx } from "../../core/page";
     import { setTweaksEnabled } from "../../core/system-toggle";
     import { setAnonymize, applyAnonymize } from "../../core/anonymize";
     import { t, getLocaleOptions } from "../i18n.svelte";
@@ -53,6 +55,53 @@
             applyAnonymize(true);
         }
     });
+
+    // * Debug report — sanitized: log records + meta only, no settings and no page text.
+    let copyStatus = $state<"" | "ok" | "error" | "empty">("");
+    let copyResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function setCopyStatus(status: typeof copyStatus): void {
+        copyStatus = status;
+        if (copyResetTimer) clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(() => {
+            copyStatus = "";
+            copyResetTimer = null;
+        }, 2500);
+    }
+
+    async function onCopyDebugReport(): Promise<void> {
+        const records = getRecentLogs();
+        if (records.length === 0) {
+            setCopyStatus("empty");
+            return;
+        }
+        let page = "unknown";
+        try {
+            page = getPageCtx().page;
+        } catch {
+            // * PageContext not initialized yet — keep the report usable.
+        }
+        const report = {
+            meta: {
+                generatedAt: new Date().toISOString(),
+                scriptVersion: typeof GM_info !== "undefined" ? GM_info?.script?.version : undefined,
+                page,
+                contentLocale: detectLocale(),
+                guiLocale: store.getByPath("gui.locale"),
+                logLevel: getLogLevel(),
+                sessionId: records[0]?.ctx.sessionId,
+                userAgent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : undefined,
+            },
+            records,
+        };
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+            setCopyStatus("ok");
+        } catch (e) {
+            setCopyStatus("error");
+            log.error(SCOPES.GUI, "copy debug report failed", e);
+        }
+    }
 </script>
 
 <Section id="tweaks" title={t("sec.tweaks")} desc={t("sec.tweaks.desc")}>
@@ -76,6 +125,26 @@
     <Field label={t("field.verbosityLevel")}>
         <Select path="debug.logLevel" options={logLevelOptions} onChange={onLogLevelChange} />
     </Field>
+    <Field label={t("field.debugReport")} desc={t("field.debugReport.desc")}>
+        <button class="yt-tweaks-debug-report" type="button" onclick={onCopyDebugReport}>
+            {t("btn.copyDebugReport")}
+        </button>
+    </Field>
+    {#if copyStatus}
+        <div
+            class="yt-tweaks-debug-report-status"
+            class:yt-tweaks-debug-report-ok={copyStatus === "ok"}
+            class:yt-tweaks-debug-report-error={copyStatus !== "ok"}
+        >
+            {t(
+                copyStatus === "ok"
+                    ? "msg.copyDebugReportOk"
+                    : copyStatus === "empty"
+                      ? "msg.copyDebugReportEmpty"
+                      : "msg.copyDebugReportFailed",
+            )}
+        </div>
+    {/if}
 </Section>
 
 <Section id="status" title={t("sec.status")} desc={t("sec.status.desc")}>

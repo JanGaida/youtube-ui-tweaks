@@ -1,6 +1,6 @@
 import type { Settings, ViewsSettings } from "./settings";
 import { LOCALE_PATTERNS, DATE_FIXED_VALUES } from "./locale";
-import log, { isDebugEnabled } from "./log";
+import log, { isDebugEnabled, warnOnce, SCOPES } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Constants — views policy (round + adaptive decimals, hardcoded)
@@ -27,7 +27,7 @@ function parseViewsNumber(raw: string, locale: string): number {
  * scaling. Below 1000, returns the rounded raw number. Non-numeric input returns null.
  *
  * @param raw     - The numeric string as captured from the YT DOM (may contain `.`/`,` separators).
- * @param unitRaw - Optional YT-supplied unit string ("Mio.", "Tsd.", "M", "K").
+ * @param unitRaw - Optional YT-supplied unit string ("Mio."/"Tsd."/"M"/"K"/"Mrd."/"B").
  * @param vcfg    - The view-formatting settings (roundMode, decimals, suffixes).
  * @param locale  - The content locale — selects the number parsing policy AND the decimal
  *                  separator of the formatted output (de "," / en "."). Defaults to "de" so
@@ -38,7 +38,9 @@ export function formatViewsNumber(raw: string, unitRaw: string, vcfg: ViewsSetti
     let n = parseViewsNumber(raw, locale);
     if (Number.isNaN(n)) return null;
     const u = (unitRaw || "").trim();
+    // ! Order matters: check Mrd before Mio ("Mrd." also matches the bare `M` alternative).
     if (/Tsd|K/i.test(u)) n *= 1e3;
+    else if (/Mrd|B/i.test(u)) n *= 1e9;
     else if (/Mio|M/i.test(u)) n *= 1e6;
 
     const order = [
@@ -91,7 +93,8 @@ export function shortenText(el: HTMLElement, settings: Settings, locale: string)
     if (el.dataset.ytTweaked) return;
     const patterns = LOCALE_PATTERNS[locale];
     if (!patterns) {
-        log.warn("text", `no patterns for locale "${locale}"`);
+        // * Once per locale/session — this runs per element and would otherwise flood the console.
+        warnOnce(SCOPES.TEXT, `locale:${locale}`, `no content patterns for locale "${locale}"`, { locale });
         return;
     }
 
@@ -156,9 +159,18 @@ export function shortenText(el: HTMLElement, settings: Settings, locale: string)
 
     if (text !== original) {
         el.textContent = text;
-        // * Hot path (runs per shortened element during scroll) — build the debug string
-        //   only when debug logging is actually on.
-        if (isDebugEnabled()) log.debug("text", `"${original.trim()}" → "${text.trim()}"`);
+        // * Hot path (runs per shortened element during scroll) — build the debug data only
+        //   when debug logging is actually on.
+        // ! NEVER log the raw text: metadata rows mix channel names + views + date (PII).
+        if (isDebugEnabled()) {
+            log.debug(SCOPES.TEXT, "metadata shortened", {
+                node: el.tagName,
+                beforeLength: original.length,
+                afterLength: text.length,
+                views: el.hasAttribute(VIEWS_MARKER),
+                date: el.hasAttribute(DATE_MARKER),
+            });
+        }
     }
     // * The processed marker is set even when nothing matched: it makes this function
     //   idempotent against the observer's repeated passes (unmatched elements would be
@@ -186,6 +198,12 @@ export function restoreText(): void {
  * @param locale   - The content locale.
  */
 export function runTextShorten(settings: Settings, locale: string): void {
+    // * Locale gate BEFORE the element loop: without patterns, every element would be
+    //   re-selected on every observer pass (no marker is set when shortenText bails).
+    if (!LOCALE_PATTERNS[locale]) {
+        warnOnce(SCOPES.TEXT, `locale:${locale}`, `no content patterns for locale "${locale}"`, { locale });
+        return;
+    }
     document.querySelectorAll<HTMLElement>(`${TEXT_SELECTOR}:not([data-yt-tweaked])`).forEach((el) => {
         shortenText(el, settings, locale);
     });

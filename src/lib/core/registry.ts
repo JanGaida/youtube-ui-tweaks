@@ -1,7 +1,7 @@
 import type { PageCtx, PageType } from "./page";
 import type { Settings } from "./settings";
 import type { Feature, ValidationError, DeepPartial } from "./feature.types";
-import log from "./log";
+import log, { SCOPES, isDebugEnabled, toErrorInfo, warnOnce } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: FeatureRegistry — dispatches tweaks per page-context
@@ -11,6 +11,24 @@ import log from "./log";
 //   based on the current PageCtx.page, with "*" as a page wildcard fallback.
 
 const features: Feature[] = [];
+
+// * Repeated feature failures (e.g. a DOM selector broken on every observer tick) would emit
+//   one error per tick — flooding the console. We emit the first failure and every 50th,
+//   in between downgrade to debug. Counts are keyed by `${phase}:${featureId}`.
+const errorCounts = new Map<string, number>();
+const ERROR_LOG_EVERY = 50;
+
+function logFeatureError(featureId: string, phase: string, err: unknown): void {
+    const key = `${phase}:${featureId}`;
+    const count = (errorCounts.get(key) ?? 0) + 1;
+    errorCounts.set(key, count);
+    const data = { feature: featureId, phase, count, error: toErrorInfo(err) };
+    if (count === 1 || count % ERROR_LOG_EVERY === 0) {
+        log.error(SCOPES.REGISTRY, `feature ${phase} failed (${count}x)`, data);
+    } else {
+        log.debug(SCOPES.REGISTRY, `feature ${phase} failed (${count}x, suppressed)`, data);
+    }
+}
 
 /**
  * Registers a feature. Duplicate ids are rejected.
@@ -23,12 +41,16 @@ export function registerFeature(f: Feature): void {
         throw new Error(`Feature already registered: ${f.id}`);
     }
     features.push(f);
-    log.debug("registry", `registered feature "${f.id}" (pages: ${Object.keys(f.pages).join(",") || "none"})`);
+    log.debug(SCOPES.REGISTRY, "feature registered", {
+        feature: f.id,
+        pages: Object.keys(f.pages).join(",") || "none",
+    });
 }
 
-/** Resets the registry (test-only — clears all registered features). */
+/** Resets the registry (test-only — clears all registered features and error counters). */
 export function resetRegistry(): void {
     features.length = 0;
+    errorCounts.clear();
 }
 
 /**
@@ -54,14 +76,21 @@ export function resolveBehavior(f: Feature, page: PageType): Feature["pages"][Pa
 /**
  * Reads a settings slice at a dot-path.
  *
+ * Never throws: a missing intermediate segment yields `undefined` (callers decide how to
+ * treat it — see `generateCSS`, which warns once per feature instead of crashing the pass).
+ *
  * @param settings - The full settings.
  * @param path     - Dot-notation path (e.g. "styling.titleAlign" or "styling" for the whole slice).
  * @returns The value at the path, or undefined.
  */
 export function getSlice(settings: Settings, path: string): unknown {
-    return path
-        .split(".")
-        .reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], settings as unknown as Record<string, unknown>);
+    return path.split(".").reduce<unknown>(
+        (o, k) => {
+            if (o === null || typeof o !== "object") return undefined;
+            return (o as Record<string, unknown>)[k];
+        },
+        settings as unknown as Record<string, unknown>,
+    );
 }
 
 /**
@@ -70,15 +99,24 @@ export function getSlice(settings: Settings, path: string): unknown {
  * @param ctx - The current page context.
  */
 export function runAll(ctx: PageCtx): void {
+    let ran = 0;
+    const skipped: string[] = [];
     for (const f of features) {
         const behavior = resolveBehavior(f, ctx.page);
         if (behavior?.run) {
+            ran++;
             try {
                 behavior.run(ctx);
             } catch (e) {
-                log.error("registry", `feature "${f.id}" run failed`, e);
+                logFeatureError(f.id, "run", e);
             }
+        } else {
+            skipped.push(f.id);
         }
+    }
+    // * One aggregate line per pass instead of one per feature — keeps debug output readable.
+    if (skipped.length > 0 && isDebugEnabled()) {
+        log.debug(SCOPES.REGISTRY, "runAll pass complete", { page: ctx.page, ran, skipped });
     }
 }
 
@@ -96,9 +134,17 @@ export function generateCSS(settings: Settings, ctx: PageCtx): string {
         if (behavior?.css) {
             try {
                 const slice = getSlice(settings, f.settingsPath);
+                if (slice === undefined) {
+                    warnOnce(
+                        SCOPES.REGISTRY,
+                        `slice:${f.id}:${f.settingsPath}`,
+                        `settingsPath "${f.settingsPath}" resolved to undefined — feature receives an empty slice`,
+                        { feature: f.id },
+                    );
+                }
                 rules.push(...behavior.css(slice, ctx));
             } catch (e) {
-                log.error("registry", `feature "${f.id}" css failed`, e);
+                logFeatureError(f.id, "css", e);
             }
         }
     }
@@ -134,6 +180,7 @@ export function scheduleLiveApply(
     pendingCtx = ctx;
     pendingSettings = settings;
     pendingKeys.add(changedKey);
+    log.debug(SCOPES.REGISTRY, "live-apply scheduled", { key: changedKey, delayMs });
     liveApplyTimer = setTimeout(() => {
         liveApplyTimer = null;
         const s = pendingSettings;
@@ -143,6 +190,7 @@ export function scheduleLiveApply(
         pendingCtx = null;
         pendingKeys = new Set();
         if (!s || !c) return;
+        log.debug(SCOPES.REGISTRY, "live-apply executing", { keys: [...keys] });
         executeLiveApply(s, c, keys, applyCss);
     }, delayMs);
     return () => {
@@ -178,7 +226,7 @@ function restoreForKeySet(keys: Set<string>, ctx: PageCtx): void {
             try {
                 behavior.restore();
             } catch (e) {
-                log.error("registry", `feature "${f.id}" restore failed`, e);
+                logFeatureError(f.id, "restore", e);
             }
         }
     }
@@ -250,6 +298,8 @@ export function restoreForFeature(featureId: string, ctx: PageCtx): void {
  */
 export function restoreAll(): void {
     const seen = new Set<() => void>();
+    const seenFeatures: string[] = [];
+    const t0 = isDebugEnabled() ? performance.now() : 0;
     for (const f of features) {
         for (const behavior of Object.values(f.pages)) {
             const restore = behavior?.restore;
@@ -257,12 +307,16 @@ export function restoreAll(): void {
                 seen.add(restore);
                 try {
                     restore();
+                    seenFeatures.push(f.id);
                 } catch (e) {
-                    log.error("registry", `feature "${f.id}" restoreAll failed`, e);
+                    logFeatureError(f.id, "restoreAll", e);
                 }
             }
         }
     }
+    const summary: Record<string, unknown> = { restored: seenFeatures.length };
+    if (isDebugEnabled()) summary.durationMs = Number((performance.now() - t0).toFixed(1));
+    log.info(SCOPES.REGISTRY, "restoreAll complete", summary);
 }
 
 /**
@@ -279,7 +333,9 @@ export function validateSettings(settings: Settings): ValidationError[] {
         try {
             errors.push(...f.validate(slice));
         } catch (e) {
-            errors.push({ path: f.settingsPath, message: `validator threw: ${String(e)}` });
+            const info = toErrorInfo(e);
+            errors.push({ path: f.settingsPath, message: `validator threw: ${info.name}: ${info.message}` });
+            log.debug(SCOPES.REGISTRY, "validator threw", { feature: f.id, error: info });
         }
     }
     return errors;

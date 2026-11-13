@@ -1,6 +1,6 @@
 import type { Settings, AutoSyncBadgeSettings } from "./settings";
 import { ROWBREAK_CLASS } from "./meta-split";
-import log from "./log";
+import log, { SCOPES } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Auto-sync badge — DOM manipulation of the metadata badges
@@ -99,7 +99,12 @@ function processBadgeItem(badgeRow: HTMLElement, cfg: AutoSyncBadgeSettings): vo
         //   skip this row forever while it stays inline-hidden with no clone inserted.
         //   Leaving the row untouched lets the next pass retry the whole move.
         badgeRow.style.removeProperty("display");
-        log.debug("badge", "skip icon-move — missing container/viewsRow/icon/divider (retry on next pass)");
+        log.debug(SCOPES.BADGE, "skip icon-move — missing part (will retry on next pass)", {
+            container: container ? "ok" : "missing",
+            viewsRow: viewsRow ? "ok" : "missing",
+            icon: iconNode ? "ok" : "missing",
+            divider: dividerNode ? "ok" : "missing",
+        });
         return;
     }
 

@@ -817,6 +817,35 @@
 .yt-tweaks-debug-status {
     margin-top: 8px;
 }
+.yt-tweaks-debug-report {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: #272727;
+    color: #f1f1f1;
+    border: 1px solid #3f3f3f;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+        background 0.12s,
+        border-color 0.12s;
+}
+.yt-tweaks-debug-report:hover {
+    background: #303030;
+    border-color: #555;
+}
+.yt-tweaks-debug-report-status {
+    margin-top: 6px;
+    font-size: 12px;
+}
+.yt-tweaks-debug-report-status.yt-tweaks-debug-report-ok {
+    color: #3ea6ff;
+}
+.yt-tweaks-debug-report-status.yt-tweaks-debug-report-error {
+    color: #ff6b6b;
+}
 .yt-tweaks-debug-row {
     display: flex;
     justify-content: space-between;

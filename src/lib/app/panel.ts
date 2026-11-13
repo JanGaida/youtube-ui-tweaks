@@ -1,5 +1,6 @@
 import { mount, unmount } from "svelte";
 import App from "../gui/App.svelte";
+import log, { SCOPES } from "../core/log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Settings panel orchestration — lazy mount/unmount of the Svelte app root
@@ -10,6 +11,7 @@ import App from "../gui/App.svelte";
 
 let app: ReturnType<typeof mount> | null = null;
 let appTarget: HTMLDivElement | null = null;
+let openedAt = 0;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Scroll trap — wheel/touch inside the panel must never scroll YouTube
@@ -61,9 +63,10 @@ export function openSettings(): void {
     //   yet. All current call sites run post-DCL, but a future caller could hit this early,
     //   so fail loudly instead of crashing on `body.append(undefined)`.
     if (!document.body) {
-        console.error("[YT-Tweaks] openSettings: no document.body yet (called before DOMContentLoaded?)");
+        log.error(SCOPES.GUI, "openSettings: no document.body yet (called before DOMContentLoaded?)");
         return;
     }
+    const t0 = performance.now();
     appTarget = document.createElement("div");
     document.body.append(appTarget);
     wheelTrap = wheelTargetInsidePanel;
@@ -76,6 +79,8 @@ export function openSettings(): void {
             onClose: closeSettings,
         },
     });
+    openedAt = Date.now();
+    log.debug(SCOPES.GUI, "panel opened", { mountMs: Number((performance.now() - t0).toFixed(1)) });
 }
 
 /**
@@ -93,6 +98,8 @@ export function closeSettings(): void {
     appTarget.remove();
     app = null;
     appTarget = null;
+    log.debug(SCOPES.GUI, "panel closed", { openMs: openedAt ? Date.now() - openedAt : 0 });
+    openedAt = 0;
 }
 
 /**

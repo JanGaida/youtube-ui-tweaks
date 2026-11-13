@@ -80,6 +80,13 @@ sequenceDiagram
 (idle callback, throttle trailing edge, live-apply timer racing the toggle) returns early
 instead of re-mutating the already-restored "clean" DOM.
 
+**Scope limit — guide order**: the kill-switch removes markers, hidden state and section-group
+classification, but it does NOT restore the pre-tweak guide ORDER. `guideEntriesRestore` clears
+the DOM state it owns; Polymer renders fresh guide nodes on the next SPA navigation or reload, at
+which point YouTube's own order applies again. The reordered guide therefore remains visible until
+that navigation/reload. This is intentional: storing and replaying the original order would fight
+YouTube's renderer for no durable benefit.
+
 **Wholesale settings replacement (reset/importJson)**: the store flushes the live-apply
 debounce and calls the observer's `restoreAndRunAll(settings)` — a conservative
 whole-state reset (restore EVERY feature's mutations, then re-apply CSS + re-run all
@@ -125,4 +132,4 @@ flowchart TB
 - Boot wiring: `src/main.ts`
 - Related doc: [feature-registry.md](feature-registry.md)
 
-Verified: 2026-10-19 — against `src/lib/core/system-toggle.ts`, `src/lib/core/anonymize.ts` (blur fallback `DEFAULT_SETTINGS.system.anonymizeBlur`), `src/lib/core/observer.ts`, `src/lib/stores/settings.svelte.ts`, `src/main.ts` @ working tree (re-verified after kill-switch gating + restoreAndRunAll changes; re-checked 2026-10-25 after the ADR 0007 defaults change: anonymize.ts blur-fallback comment now points at the curated DEFAULT_SETTINGS.system.anonymizeBlur (4) instead of a hard-coded 12 — mount/blur logic unchanged)
+Verified: 2026-10-19 — against `src/lib/core/system-toggle.ts`, `src/lib/core/anonymize.ts` (blur fallback `DEFAULT_SETTINGS.system.anonymizeBlur`), `src/lib/core/observer.ts`, `src/lib/stores/settings.svelte.ts`, `src/main.ts` @ working tree (re-verified after kill-switch gating + restoreAndRunAll changes; re-checked 2026-10-25 after the ADR 0007 defaults change: anonymize.ts blur-fallback comment now points at the curated DEFAULT_SETTINGS.system.anonymizeBlur (4) instead of a hard-coded 12 — mount/blur logic unchanged; re-checked 2026-11-13: guideEntriesRestore now also clears the section-group classification markers, but still does not restore the pre-tweak guide order — documented as an explicit scope limit)

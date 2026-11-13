@@ -409,6 +409,8 @@ const TRANSLATIONS: Record<GuiLocale, Record<string, string>> = {
         "field.backdropOpacity": "Hintergrund-Deckkraft",
         "field.posMaxAgeHours": "Position merken für",
         "field.verbosityLevel": "Verbosity-Level",
+        "field.debugReport": "Debug-Report",
+        "field.debugReport.desc": "Kopiert die letzten Log-Einträge als JSON (ohne Einstellungen oder Seitentexte).",
         "field.tweaksEnabled": "Tweaks aktiviert",
         "field.anonymize": "Anonymize-Layer",
         "field.anonymizeBlur": "Verwischungs-Stärke",
@@ -537,8 +539,12 @@ const TRANSLATIONS: Record<GuiLocale, Record<string, string>> = {
             "Die installierte Kopie stimmt nicht mit diesem Build überein — Skript von GitHub neu installieren.",
         "btn.export": "Export",
         "btn.import": "Import",
+        "btn.copyDebugReport": "Report kopieren",
         "msg.importFailed": "Import fehlgeschlagen — ungültiges JSON-Format.",
         "msg.resetConfirm": "Alle Einstellungen auf Standardwerte zurücksetzen?",
+        "msg.copyDebugReportOk": "Debug-Report kopiert.",
+        "msg.copyDebugReportFailed": "Kopieren fehlgeschlagen — Details im Log.",
+        "msg.copyDebugReportEmpty": "Kein Log vorhanden — Verbosity auf debug stellen und erneut versuchen.",
     },
 
     en: {
@@ -922,6 +928,8 @@ const TRANSLATIONS: Record<GuiLocale, Record<string, string>> = {
         "field.backdropOpacity": "Backdrop opacity",
         "field.posMaxAgeHours": "Remember position for",
         "field.verbosityLevel": "Verbosity level",
+        "field.debugReport": "Debug report",
+        "field.debugReport.desc": "Copies the recent log entries as JSON (no settings or page text).",
         "field.tweaksEnabled": "Tweaks enabled",
         "field.anonymize": "Anonymize layer",
         "field.anonymizeBlur": "Blur strength",
@@ -1043,8 +1051,12 @@ const TRANSLATIONS: Record<GuiLocale, Record<string, string>> = {
         // MARK: Iconbar + Messages
         "btn.export": "Export",
         "btn.import": "Import",
+        "btn.copyDebugReport": "Copy report",
         "msg.importFailed": "Import failed — invalid JSON format.",
         "msg.resetConfirm": "Reset all settings to defaults?",
+        "msg.copyDebugReportOk": "Debug report copied.",
+        "msg.copyDebugReportFailed": "Copy failed — see the log for details.",
+        "msg.copyDebugReportEmpty": "No log entries — set verbosity to debug and try again.",
 
         // MARK: About — static labels
         "about.version": "Version",

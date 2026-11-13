@@ -143,6 +143,24 @@ flowchart LR
   end
 ```
 
+## System Tab — Debug Report
+
+```mermaid
+flowchart LR
+  Btn["Logging section — 'Copy report' button"] -->|getRecentLogs()| Ring["log.ts ring buffer<br/>(max 500 emitted records)"]
+  Btn -->|meta| Meta["version, page, content/GUI locale,<br/>level, sessionId, truncated UA"]
+  Ring --> Btn
+  Meta --> Btn
+  Btn -->|JSON.stringify + clipboard.writeText| Clip["system clipboard"]
+  Btn -.->|ring empty| Empty["inline hint: set verbosity to debug"]
+  Btn -.->|write failed| Log["log.error (scope gui)"]
+```
+
+- The copied report contains **no settings, no page text and no query URLs** — only retained log
+  records plus the sanitized meta block. Privacy rules: [ADR 0012](../adr/0012-structured-logging-and-correlation.md).
+- The ring stores only records that passed the level filter, so at the default `silent` level the
+  report is empty and the button explains how to collect records.
+
 ## About Tab (Data Flow)
 
 ```mermaid
@@ -246,4 +264,4 @@ flowchart TB
 - About tab: `src/lib/gui/tabs/AboutTab.svelte`, `src/lib/gui/about-changelog.ts` (parser + decode, ADR 0010), `src/vite-env.d.ts` (GM_info subset incl. `script.version`), `src/lib/gui/icons.ts` (SUB_ICONS.github, EXTERNAL_ICON)
 - Scroll isolation: `src/lib/app/panel.ts` (wheel/touch trap on the app host — preventDefault only outside/edge of the scroll containers; CSS `overscroll-behavior: contain` on `.yt-tweaks-content`, `.yt-tweaks-cat-list`, `.yt-tweaks-dropdown-popout`)
 
-Verified: 2026-10-26 — against `src/lib/gui/navigation/categories.ts` (9 categories; video-item: 9 sections incl. preview-delay; ads-promotions: 3 sections; watch-page: 1 section), `src/lib/gui/navigation/section-masonry.ts` (rAF coalescing), `src/lib/gui/App.svelte` (focus trap, keyboard resize, a11y.resize* labels), `src/lib/gui/components/CategorySidebar.svelte` + `src/lib/gui/panel.css` (re-checked 2026-10-26: about rows compact gap layout + version pill; changelog head pill, left-ruled body, scope-highlighted bullets — .yt-tweaks-changelog-* styles; sidebar overflow on .yt-tweaks-cat-list so the iconbar stays pinned at the sidebar bottom while the nav items scroll; overscroll containment on content/cat-list/dropdown-popout), `src/lib/gui/tabs/AboutTab.svelte` + `src/lib/gui/about-changelog.ts` (re-checked 2026-10-26: version from GM_info.script.version with GM_info.version fallback, changelog embedded base64 via `__CHANGELOG_B64__` define in `vite.config.ts` (decodeChangelog), section-by-version with newest-entry fallback + mismatch note, debug-gated GM_info snapshot on open — ADR 0010; Tampermonkey docs GM_info type: top-level version optional, script.version required — TM 5.5.0 bug report), `src/lib/gui/i18n.svelte.ts` (about.* keys in de + en), `src/main.ts` (unconditional GM_info boot snapshot), `src/lib/gui/icons.ts` (SUB_ICONS.github, EXTERNAL_ICON), `src/lib/app/panel.ts` (wheel/touch trap attach on open, remove on close) @ working tree
+Verified: 2026-10-26 — against `src/lib/gui/navigation/categories.ts` (9 categories; video-item: 9 sections incl. preview-delay; ads-promotions: 3 sections; watch-page: 1 section), `src/lib/gui/navigation/section-masonry.ts` (rAF coalescing), `src/lib/gui/App.svelte` (focus trap, keyboard resize, a11y.resize* labels), `src/lib/gui/components/CategorySidebar.svelte` + `src/lib/gui/panel.css` (re-checked 2026-10-26: about rows compact gap layout + version pill; changelog head pill, left-ruled body, scope-highlighted bullets — .yt-tweaks-changelog-* styles; sidebar overflow on .yt-tweaks-cat-list so the iconbar stays pinned at the sidebar bottom while the nav items scroll; overscroll containment on content/cat-list/dropdown-popout), `src/lib/gui/tabs/AboutTab.svelte` + `src/lib/gui/about-changelog.ts` (re-checked 2026-10-26: version from GM_info.script.version with GM_info.version fallback, changelog embedded base64 via `__CHANGELOG_B64__` define in `vite.config.ts` (decodeChangelog), section-by-version with newest-entry fallback + mismatch note, debug-gated GM_info snapshot on open — ADR 0010; Tampermonkey docs GM_info type: top-level version optional, script.version required — TM 5.5.0 bug report), `src/lib/gui/i18n.svelte.ts` (about.* keys in de + en), `src/main.ts` (unconditional GM_info boot snapshot), `src/lib/gui/icons.ts` (SUB_ICONS.github, EXTERNAL_ICON), `src/lib/app/panel.ts` (wheel/touch trap attach on open, remove on close) @ working tree (re-verified 2026-11-13 after the structured-logging change: SystemTab logging section gained the debug-report button, panel.css gained .yt-tweaks-debug-report* styles, i18n gained field.debugReport/btn.copyDebugReport/msg.copyDebugReport* — panel navigation/resize mechanics unchanged)

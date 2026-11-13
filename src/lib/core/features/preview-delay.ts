@@ -1,7 +1,7 @@
 import type { Feature, ValidationError } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { PreviewDelaySettings } from "../settings";
-import log from "../log";
+import log, { SCOPES } from "../log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: preview-delay feature — delay the inline hover-preview player on grid items
@@ -120,7 +120,12 @@ function armItem(item: HTMLElement, delayMs: number): void {
         //   Hover item A (timer running), move to item B: A's timer would fire after A's
         //   remaining delay and lift the gate — B's preview would appear early. Every enter
         //   restarts the delay cleanly.
-        for (const t of pendingTimers.values()) clearTimeout(t);
+        // ! Reset each cancelled item's marker back to ARMED — a stale "pending" marker makes
+        //   debug output lie about the item state even though the listener is still attached.
+        for (const [pendingItem, timer] of pendingTimers) {
+            clearTimeout(timer);
+            pendingItem.setAttribute(MARKER_ATTR, MARKER_ARMED);
+        }
         pendingTimers.clear();
         // * Re-apply the gate on every enter (covers: first hover, AND re-hover after a prior
         //   preview showed + mouse left + came back). The gate must be active during the delay.
@@ -134,7 +139,7 @@ function armItem(item: HTMLElement, delayMs: number): void {
             liftGate();
             gateLifted = true;
             item.setAttribute(MARKER_ATTR, MARKER_SHOWN);
-            log.debug("preview-delay", `gate lifted after ${delayMs}ms`);
+            log.debug(SCOPES.PREVIEW, "gate lifted", { delayMs });
         }, delayMs);
         pendingTimers.set(item, timer);
     };

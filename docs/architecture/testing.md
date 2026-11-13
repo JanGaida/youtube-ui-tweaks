@@ -97,6 +97,13 @@ subscription data) — deliberately gitignored and never published. Fixture suit
 green with those suites skipped. CI (`.github/workflows/ci.yml`) runs only
 check / test / docs:check / format:check / build — no E2E.
 
+**Logger tests**: `log.test.ts` covers level filtering and console-method mapping, unknown-level
+warnings, `warnOnce`, `toErrorInfo`, DOM-node normalization, the 500-record ring buffer,
+`withLogContext` restore-on-throw and correlation ids. `settings.test.ts` covers the boot-time
+level pre-read and persistence failures; `page-context.test.ts` covers page-change listener
+isolation; `css.test.ts` covers the shared injector; `guide-entries-hash.test.ts` covers the
+hash-retry and section-marker cleanup regressions.
+
 **Typecheck includes tests**: `tsconfig.json` includes `src/**/*.ts` (the test files live
 under `src/lib/core/__tests__/`), so the typecheck gate covers the test suite; `noEmit` is
 required there (a previously emitted stale `vite.config.js` shadowed `vite.config.ts`
@@ -131,6 +138,7 @@ flowchart TB
 - Fixture harness (skip-if-absent): `src/lib/core/__tests__/fixture-harness.ts`
 - CI: `.github/workflows/ci.yml` (check / test / docs:check / format:check / build — no E2E)
 - Capture tooling: `src/lib/dev/capture.ts` (dev build only, `__DEV_CAPTURE__`-gated)
-- Decision record: [ADR 0003 — fixture-based testing](../adr/0003-fixture-based-testing.md)
+- Decision record: [ADR 0003 — fixture-based testing](../adr/0003-fixture-based-testing.md),
+  [ADR 0012 — structured logging](../adr/0012-structured-logging-and-correlation.md)
 
-Verified: 2026-10-25 — against `playwright.config.ts`, `vitest.config.ts`, `tsconfig.json`, `e2e/helpers/`, `e2e/global-setup.ts`, `src/lib/core/__tests__/fixture-harness.ts`, `.github/workflows/ci.yml`, `src/lib/dev/capture.ts` @ working tree (31 test files; re-verified after the 2026-10-24 meta-split change: new jsdom unit suite `meta-split.test.ts` (pass/restore/badge-interplay/registration-order), new E2E `meta-split.spec.ts` against the SYNTHETIC `lockup-meta-split.fixture.html` current-one-row fixture — the captured home grid (old separate-rows structure) guards against false breaks; 2026-10-25: capture.ts fixture-header recapture hint corrected to the real "Capture All Fixtures" menu path — doc statements unaffected)
+Verified: 2026-11-13 — against `playwright.config.ts`, `vitest.config.ts`, `tsconfig.json`, `e2e/helpers/`, `e2e/global-setup.ts`, `src/lib/core/__tests__/fixture-harness.ts`, `.github/workflows/ci.yml`, `src/lib/dev/capture.ts` @ working tree (38 test files, 460 tests; logger/privacy suites added 2026-11-13: `log.test.ts`, plus `settings.test.ts`, `page-context.test.ts`, `css.test.ts`, `guide-entries-hash.test.ts`)

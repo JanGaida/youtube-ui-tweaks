@@ -2,7 +2,7 @@ import { store } from "../stores/settings.svelte";
 import { currentSettings, startObserver, stopObserver, runAll } from "./observer";
 import { applyCSS, STYLE_ID } from "./css";
 import { restoreAll } from "./registry";
-import log from "./log";
+import log, { SCOPES } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: System-Toggle — global kill-switch (`system.tweaksEnabled`)
@@ -44,14 +44,14 @@ export function applyToggleState(enabled: boolean): void {
         if (currentSettings) applyCSS(currentSettings);
         startObserver();
         runAll();
-        log.info("system-toggle", "tweaks enabled");
+        log.info(SCOPES.SYSTEM, "tweaks enabled");
     } else {
         // * Disable: stop observer, remove stylesheet, restore all DOM mutations.
         stopObserver();
         const style = document.getElementById(STYLE_ID);
         if (style) style.remove();
         restoreAll();
-        log.info("system-toggle", "tweaks disabled (clean state)");
+        log.info(SCOPES.SYSTEM, "tweaks disabled (clean state)");
     }
 }
 

@@ -1,7 +1,7 @@
 import { store } from "../stores/settings.svelte";
 import { DEFAULT_SETTINGS } from "./settings";
 import { currentSettings } from "./observer";
-import log from "./log";
+import log, { SCOPES } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Anonymize Layer — CSS-only blur over sensitive texts + thumbnails + avatars
@@ -95,7 +95,9 @@ export function applyAnonymize(enabled: boolean): void {
         //   two can never drift apart when the default blur changes.
         const blur = currentSettings?.system.anonymizeBlur ?? DEFAULT_SETTINGS.system.anonymizeBlur;
         const css = generateAnonymizeCSS(blur);
-        let el = document.getElementById(id) as HTMLStyleElement | null;
+        const el0 = document.getElementById(id) as HTMLStyleElement | null;
+        const isUpdate = el0 !== null;
+        let el = el0;
         if (el) {
             el.textContent = css;
         } else {
@@ -105,16 +107,20 @@ export function applyAnonymize(enabled: boolean): void {
             // ! document.head may be null at document-start → documentElement fallback
             const mount = document.head || document.documentElement;
             if (!mount) {
-                log.error("anonymize", "no mount point (document.head & documentElement null)");
+                log.error(SCOPES.ANONYMIZE, "no mount point (document.head & documentElement null)");
                 return;
             }
             mount.appendChild(el);
         }
-        log.info("anonymize", `anonymize layer enabled (blur ${blur}px)`);
+        // * Updates (blur stepper) are debug; a fresh mount is the state change → info.
+        if (isUpdate) log.debug(SCOPES.ANONYMIZE, "anonymize layer updated", { blur });
+        else log.info(SCOPES.ANONYMIZE, "anonymize layer enabled", { blur });
     } else {
         const el = document.getElementById(id);
-        if (el) el.remove();
-        log.info("anonymize", "anonymize layer disabled");
+        if (el) {
+            el.remove();
+            log.info(SCOPES.ANONYMIZE, "anonymize layer disabled");
+        }
     }
 }
 

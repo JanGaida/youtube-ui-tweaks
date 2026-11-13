@@ -1,7 +1,7 @@
 import type { Feature, ValidationError } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { StartpageSettings, GridColumnsPreset } from "../settings";
-import log, { isDebugEnabled } from "../log";
+import log, { isDebugEnabled, SCOPES } from "../log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: startpage-grid feature — grid column-count override (home/subscriptions/channel)
@@ -112,7 +112,7 @@ function startpageGridRun(ctx: PageCtx): void {
     }
     // * Runs on every observer tick (no idempotency early-return) — guard the string build.
     if (isDebugEnabled()) {
-        log.debug("startpage-grid", `applied ${n} columns inline on ${GRID_SEL}`);
+        log.debug(SCOPES.STARTPAGE, "columns applied", { columns: n, selector: GRID_SEL });
     }
 }
 
