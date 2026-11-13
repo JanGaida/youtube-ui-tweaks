@@ -1,4 +1,4 @@
-import { LOG_LEVELS, type SettingsLogLevel } from "./log";
+import log, { LOG_LEVELS, SCOPES, toErrorInfo, type SettingsLogLevel } from "./log";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Constants — default settings + persistence
@@ -741,6 +741,16 @@ export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
 }
 
 /**
+ * Type guard for a persisted/imported settings payload: a plain object, never null or an array.
+ *
+ * @param value - The parsed JSON value.
+ * @returns True when the value can be deep-merged into the settings.
+ */
+export function isSettingsObject(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
  * Reads the persisted `debug.logLevel` directly from GM storage without a full settings load.
  *
  * Used at boot to apply the stored level BEFORE `loadSettings()` runs, so settings-load and
@@ -769,8 +779,27 @@ export function readStoredLogLevel(): SettingsLogLevel {
  * @returns A fully-formed Settings object.
  */
 export function loadSettings(): Settings {
+    const applied: string[] = [];
     const savedStr = GM_getValue(SETTINGS_KEY, "{}");
-    const saved = JSON.parse(savedStr);
+    let saved: Record<string, unknown>;
+    try {
+        const parsed = typeof savedStr === "string" ? JSON.parse(savedStr) : savedStr;
+        if (!isSettingsObject(parsed)) {
+            log.warn(SCOPES.SETTINGS, "stored settings have an unexpected shape — using defaults", {
+                kind: Array.isArray(parsed) ? "array" : typeof parsed,
+            });
+            saved = {};
+        } else {
+            saved = parsed;
+        }
+    } catch (e) {
+        log.error(SCOPES.SETTINGS, "stored settings JSON is invalid — using defaults (stored value kept)", {
+            key: SETTINGS_KEY,
+            rawLength: typeof savedStr === "string" ? savedStr.length : -1,
+            error: toErrorInfo(e),
+        });
+        saved = {};
+    }
     const defaults: Settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 
     // * MIGRATION highlightUnseen → dimWatched (one-time, if dimWatched is not yet saved).
@@ -781,6 +810,7 @@ export function loadSettings(): Settings {
         (saved as Record<string, unknown>).highlightUnseen &&
         !(saved as Record<string, unknown>).dimWatched
     ) {
+        applied.push("highlightUnseen→dimWatched");
         const old = (saved as Record<string, unknown>).highlightUnseen as Record<string, unknown>;
         const oldBrightness = typeof old.brightness === "string" ? old.brightness : "medium";
         (saved as Record<string, unknown>).dimWatched = {
@@ -809,6 +839,7 @@ export function loadSettings(): Settings {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         const masthead = styling.masthead as Record<string, unknown> | undefined;
         if (masthead && typeof masthead.menuSidebarMode === "string") {
+            applied.push("menuSidebarMode→hideHamburger+guide.visibility");
             const oldMode = masthead.menuSidebarMode;
             // * hideHamburger is ALWAYS migrated from the old mode (masthead configuration).
             if (oldMode === "hidden") {
@@ -842,6 +873,7 @@ export function loadSettings(): Settings {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         const masthead = styling.masthead as Record<string, unknown> | undefined;
         if (masthead && typeof masthead.searchButton === "string") {
+            applied.push("masthead.searchButton→hideSearchButton");
             masthead.hideSearchButton = masthead.searchButton === "hide";
             delete masthead.searchButton;
         }
@@ -859,6 +891,7 @@ export function loadSettings(): Settings {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         const menuButton = styling.menuButton as Record<string, unknown> | undefined;
         if (menuButton && "margin" in menuButton) {
+            applied.push("menuButton.margin removed");
             delete menuButton.margin;
         }
     }
@@ -878,6 +911,7 @@ export function loadSettings(): Settings {
     ) {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         if (typeof styling.titleFontSize === "string" || typeof styling.metaFontSize === "string") {
+            applied.push("styling rem→preset enums");
             const rem = (v: unknown): number | null => {
                 if (typeof v !== "string") return null;
                 // * Accept only pure rem values — other units (px, garbage) are not a valid
@@ -944,6 +978,7 @@ export function loadSettings(): Settings {
     ) {
         const textShorten = (saved as Record<string, unknown>).textShorten as Record<string, unknown>;
         if ("viewsText" in textShorten) {
+            applied.push("textShorten.viewsText→viewsWordMode");
             textShorten.viewsWordMode =
                 typeof textShorten.viewsText === "string" && textShorten.viewsText !== "" ? "locale" : "none";
             delete textShorten.viewsText;
@@ -965,6 +1000,7 @@ export function loadSettings(): Settings {
         const guide = (saved as Record<string, unknown>).guide as Record<string, unknown>;
         const w = guide.width;
         if (w && typeof w === "object" && !Array.isArray(w)) {
+            applied.push("guide.width→preset");
             const wo = w as Record<string, unknown>;
             const full = typeof wo.full === "number" ? (wo.full as number) : 0;
             let preset: GuideWidthPreset;
@@ -991,6 +1027,7 @@ export function loadSettings(): Settings {
         const startpage = (saved as Record<string, unknown>).startpage as Record<string, unknown>;
         const map: Record<string, string> = { small: "2", large: "4", xlarge: "5" };
         if (typeof startpage.columnsPreset === "string" && startpage.columnsPreset in map) {
+            applied.push("startpage columns adjective→numeric");
             startpage.columnsPreset = map[startpage.columnsPreset];
         }
     }
@@ -1024,6 +1061,7 @@ export function loadSettings(): Settings {
         ].some((k) => typeof ads[k] === "boolean");
         const hasNested = !!ads.promo || !!ads.shelves || !!ads.survey;
         if (hasFlatFlag && !hasNested) {
+            applied.push("ads flat→nested groups");
             const b = (k: string): boolean | undefined =>
                 typeof ads[k] === "boolean" ? (ads[k] as boolean) : undefined;
             ads.promo = {
@@ -1070,6 +1108,7 @@ export function loadSettings(): Settings {
     ) {
         const styling = (saved as Record<string, unknown>).styling as Record<string, unknown>;
         if (typeof styling.titleMaxLines === "number") {
+            applied.push("styling.titleMaxLines number→string");
             styling.titleMaxLines = String(styling.titleMaxLines);
         }
     }
@@ -1086,6 +1125,7 @@ export function loadSettings(): Settings {
     ) {
         const feedChips = (saved as Record<string, unknown>).feedChips as Record<string, unknown>;
         if (feedChips.layout === "stack") {
+            applied.push("feedChips.layout stack→collapse");
             feedChips.layout = "collapse";
         }
     }
@@ -1100,6 +1140,7 @@ export function loadSettings(): Settings {
         const sysObj = sys && typeof sys === "object" ? (sys as Record<string, unknown>) : undefined;
         const hasTweaksEnabled = sysObj && typeof sysObj.tweaksEnabled === "boolean";
         if (!hasTweaksEnabled) {
+            applied.push("ytTweaksEnabled→system.tweaksEnabled");
             // * Default true, if the old GM key was never set (GM_getValue returns "true").
             const legacy: string = GM_getValue("ytTweaksEnabled", "true");
             const tweaksEnabled = legacy !== "false";
@@ -1132,16 +1173,34 @@ export function loadSettings(): Settings {
         return target;
     }
 
+    if (applied.length > 0) {
+        log.info(SCOPES.SETTINGS, "migrations applied", { migrations: applied });
+    }
+
     return deepMerge(defaults as unknown as Record<string, unknown>, saved) as unknown as Settings;
 }
 
 /**
  * Persists the given settings to GM storage as JSON.
  *
+ * Logs success at debug and failures at error (with a rethrow, so the store can decide how to
+ * surface a quota/manager failure). Never swallows the exception.
+ *
  * @param obj - The settings object to store.
  */
 export function saveSettings(obj: Settings): void {
-    GM_setValue(SETTINGS_KEY, JSON.stringify(obj));
+    const json = JSON.stringify(obj);
+    try {
+        GM_setValue(SETTINGS_KEY, json);
+        log.debug(SCOPES.SETTINGS, "settings persisted", { key: SETTINGS_KEY, chars: json.length });
+    } catch (e) {
+        log.error(SCOPES.SETTINGS, "persist failed — changes are in memory only", {
+            key: SETTINGS_KEY,
+            chars: json.length,
+            error: toErrorInfo(e),
+        });
+        throw e;
+    }
 }
 
 /** Persisted settings-panel position (pixel coordinates from drag/resize + save timestamp). */

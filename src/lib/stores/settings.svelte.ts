@@ -1,5 +1,12 @@
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, deepMergeSettings, type Settings } from "../core/settings";
-import { setLogLevel } from "../core/log";
+import {
+    DEFAULT_SETTINGS,
+    loadSettings,
+    saveSettings,
+    deepMergeSettings,
+    isSettingsObject,
+    type Settings,
+} from "../core/settings";
+import log, { setLogLevel, SCOPES } from "../core/log";
 import {
     applyAllLive,
     scheduleLiveApply,
@@ -44,7 +51,7 @@ class SettingsStore {
         try {
             this.settings = loadSettings();
         } catch (e) {
-            console.error("[YT-Tweaks] loadSettings failed — using defaults", e);
+            log.error(SCOPES.SETTINGS, "loadSettings failed — using defaults", e);
             this.settings = structuredClone(DEFAULT_SETTINGS);
         }
         setCurrentSettings(this.settings);
@@ -54,7 +61,12 @@ class SettingsStore {
     /** Flushes pending live-applies, persists the settings, and re-applies immediately. */
     save(): void {
         flushLiveApply();
-        saveSettings(this.settings);
+        try {
+            saveSettings(this.settings);
+        } catch {
+            // * saveSettings already logged at error level; keep the panel closable and the
+            //   in-memory state intact (a quota/manager failure must not crash the close handler).
+        }
         setCurrentSettings(this.settings);
         applyAllLive(this.settings);
     }
@@ -95,6 +107,8 @@ class SettingsStore {
             o = o[parts[i]] as Record<string, unknown>;
         }
         o[parts[parts.length - 1]] = value;
+        if (path === "debug.logLevel") setLogLevel(String(value));
+        log.debug(SCOPES.SETTINGS, "setByPath", { path });
         setCurrentSettings(this.settings);
         validation.revalidate(this.settings);
         scheduleLiveApply(this.settings, path);
@@ -149,7 +163,10 @@ class SettingsStore {
      */
     importJson(json: string): void {
         const parsed = JSON.parse(json);
-        if (!parsed || typeof parsed !== "object") {
+        if (!isSettingsObject(parsed)) {
+            log.error(SCOPES.SETTINGS, "import rejected — payload is not a plain object", {
+                kind: Array.isArray(parsed) ? "array" : typeof parsed,
+            });
             throw new Error("Invalid settings JSON: not an object");
         }
         // * Deep-merge over defaults (broken/missing keys fall back to defaults)
@@ -160,6 +177,7 @@ class SettingsStore {
         flushLiveApply();
         saveSettings(merged);
         restoreAndRunAll(merged);
+        log.info(SCOPES.SETTINGS, "settings imported", { topLevelKeys: Object.keys(parsed).length });
     }
 }
 

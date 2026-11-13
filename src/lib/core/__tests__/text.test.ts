@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { formatViewsNumber } from "../text";
+import { LOCALE_PATTERNS } from "../locale";
 
 /**
  * Pure-logic tests for `formatViewsNumber` — no DOM, no jsdom. Validates the round/truncate
@@ -72,5 +73,27 @@ describe("formatViewsNumber", () => {
 
     it("en: honors YT-supplied K unit", () => {
         expect(formatViewsNumber("12", "K", vcfg, "en")).toBe("12k");
+    });
+
+    it("en: honors the B unit", () => {
+        expect(formatViewsNumber("1.2", "B", vcfg, "en")).toBe("1.2B");
+    });
+
+    it("en: accepts a lowercase b unit", () => {
+        expect(formatViewsNumber("1.5", "b", vcfg, "en")).toBe("1.5B");
+    });
+
+    it("de: honors the Mrd. unit", () => {
+        expect(formatViewsNumber("1,2", "Mrd.", vcfg, "de")).toBe("1,2B");
+    });
+
+    it("de: does not confuse Mrd. with the M unit", () => {
+        expect(formatViewsNumber("1", "Mrd.", vcfg, "de")).toBe("1B");
+        expect(formatViewsNumber("1", "Mio.", vcfg, "de")).toBe("1M");
+    });
+
+    it("locale view regexes capture billion units", () => {
+        expect("1.2B views".match(LOCALE_PATTERNS.en.views.regex)?.[2]).toBe("B");
+        expect("1,2 Mrd. Aufrufe".match(LOCALE_PATTERNS.de.views.regex)?.[2]).toBe("Mrd.");
     });
 });
