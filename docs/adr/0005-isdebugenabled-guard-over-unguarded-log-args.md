@@ -6,7 +6,7 @@
 
 ## Context
 
-The logger (`log.ts`) filters inside `_emit`: every `log.debug(...)` below `LOG_LEVEL` is
+The logger (`log.ts`) filters inside `_emit`: every `log.debug(...)` below the current level is
 discarded there. But the filter only protects the **console call** — call sites still build
 their arguments unconditionally:
 
@@ -18,15 +18,15 @@ their arguments unconditionally:
 - `startpage-grid` (the only feature `run` without an idempotency early-return) rebuilt two
   template strings per tick.
 
-With `LOG_LEVEL=info` (the default) this is pure allocation + DOM-query waste in exactly the
-paths that run most often.
+With `debug.logLevel=silent` (the default, see ADR 0007) this is pure allocation + DOM-query
+waste in exactly the paths that run most often.
 
 ## Decision
 
 Hot paths guard debug-only work with `isDebugEnabled()` (exported from `log.ts`) **before**
 building strings or running debug-only queries:
 
-1. `isDebugEnabled()` returns `LOG_LEVELS.debug >= LOG_LEVEL` — a cheap boolean, no
+1. `isDebugEnabled()` returns `getLogLevel() === "debug"` — a cheap boolean, no
    string/allocation cost.
 2. Any debug-only side work (status counts, timing, interpolation) goes **inside** the guard.
 3. `_emit`'s internal level filter stays as defense-in-depth — cold call sites (boot,
@@ -54,7 +54,7 @@ building strings or running debug-only queries:
 
 ## References
 
-- Implementation: `src/lib/core/log.ts` (`isDebugEnabled`), `src/lib/core/observer.ts`
+- Implementation: `src/lib/core/log.ts` (`isDebugEnabled`, `getLogLevel`), `src/lib/core/observer.ts`
   (`runAll`), `src/lib/core/text.ts` (`shortenText`), `src/lib/core/features/startpage-grid.ts`
 - Architecture doc: [feature-registry.md](../architecture/feature-registry.md) (dispatch
   triggers that constitute the hot paths)

@@ -80,10 +80,11 @@ sequenceDiagram
   participant Obs as observer.ts
 
   TM->>Main: document-start (readyState=loading)
+  Main->>Main: setLogLevel(readStoredLogLevel()) — persisted debug.logLevel, before any load
   Main->>Reg: registerAllFeatures() (17 features)
   Main->>Store: store.load() (GM_getValue → defaults on error)
-  Main->>Main: initPageContext(settings, onNavChange)
-  Main->>Main: detectLocale() + setLogLevel()
+  Main->>Main: setLogLevel(settings.debug.logLevel) + initPageContext(settings, onNavChange)
+  Main->>Main: detectLocale() + boot log (page, locale, level, enabled)
   alt system.tweaksEnabled
     Main->>Main: applyCSS() — inject #yt-tweaks-css (before first paint, avoids FOUC)
     Main->>Main: applyAllLive(settings) + runAll() (page-context callback)
@@ -98,6 +99,15 @@ sequenceDiagram
   Main->>Obs: runAll() + startObserver() (MutationObserver on #content, 200ms throttle, yt-navigate-finish listener)
   TM->>Main: GM_registerMenuCommand("Einstellungen"/"Settings", openSettings) — label locale-aware, lazy GUI mount
 ```
+
+**Why the log level is read before the settings load**: the default is `silent` (ADR 0007), so
+setting the level only after `store.load()` would discard every registration and migration debug
+log. `readStoredLogLevel()` parses the persisted level directly and never throws; the full load
+then re-applies the authoritative value defensively.
+
+**Logging contract**: every emitted record carries a timestamp, sequence, level, scope and the
+active correlation context (`sessionId` per page load, `navSeq` per SPA navigation, `runId` per
+observer pass). See [ADR 0012](../adr/0012-structured-logging-and-correlation.md).
 
 **Why registration precedes CSS generation**: `applyCSS` asks the registry to generate the
 feature-driven CSS (`generateCSS(settings, ctx)`); an empty registry would emit an empty
@@ -183,4 +193,4 @@ flowchart TB
 - Feature registration: `src/lib/core/features/index.ts` (17 registered features)
 - Cross-cutting decisions: [docs/adr/](../adr/)
 
-Verified: 2026-10-24 — against `src/main.ts`, `src/lib/core/{registry,observer,page,feature.types}.ts`, `src/lib/stores/settings.svelte.ts`, `src/lib/core/features/index.ts` (17 features — meta-split added; boot sequence unchanged: runAll() once, THEN startObserver()) @ working tree (re-verified after the 2026-10-24 meta-split change)
+Verified: 2026-10-24 — against `src/main.ts`, `src/lib/core/{registry,observer,page,feature.types}.ts`, `src/lib/stores/settings.svelte.ts`, `src/lib/core/features/index.ts` (17 features — meta-split added; boot sequence unchanged: runAll() once, THEN startObserver()) @ working tree (re-verified 2026-11-13 after the structured-logging change: boot now reads the persisted level before registration/load, boot diagnostics go through the logger, and every run carries session/run/nav correlation — see ADR 0012)

@@ -1,8 +1,7 @@
 import type { Feature } from "../feature.types";
 import type { PageCtx } from "../page";
-import type { GuideSettings } from "../settings";
 import log, { SCOPES } from "../log";
-import { detectGroupForSection, getGroupForEntry, SECTION_GROUP_ATTR } from "./guide-groups";
+import { detectGroupForSection, SECTION_GROUP_ATTR } from "./guide-groups";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: guide-entries feature — hide + reorder YT guide entries (DOM)

@@ -66,8 +66,11 @@ duplicating rationale.
 | [0005](../adr/0005-isdebugenabled-guard-over-unguarded-log-args.md) | `isDebugEnabled()` guards over unguarded hot-path log args    |
 | [0006](../adr/0006-preset-enums-over-freeform-css-inputs.md)        | Preset enums over free-form CSS inputs (layout invariants)    |
 | [0007](../adr/0007-curated-opinionated-defaults.md)                 | Curated opinionated defaults over YT-native opt-in defaults   |
+| [0008](../adr/0008-release-please-automation-contract.md)           | Release-please automation and changelog visibility            |
 | [0009](../adr/0009-squash-merge-and-pr-title-contract.md)           | Squash-only merges with Conventional-Commits PR titles        |
 | [0010](../adr/0010-about-tab-changelog-embedded-at-build-time.md)   | About-tab changelog embedded at build time (no runtime fetch) |
+| [0011](../adr/0011-static-text-build-time-base64-encoding.md)       | Build-time Base64 for static text literals                    |
+| [0012](../adr/0012-structured-logging-and-correlation.md)           | Structured logging, correlation IDs, ring buffer, privacy     |
 
 ## Diagram Conventions (Legend)
 
