@@ -1,5 +1,12 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { DEFAULT_SETTINGS, isSettingsObject, loadSettings, readStoredLogLevel, saveSettings } from "../settings";
+import {
+    DEFAULT_SETTINGS,
+    deepMergeSettings,
+    isSettingsObject,
+    loadSettings,
+    readStoredLogLevel,
+    saveSettings,
+} from "../settings";
 import { resetLoggerState, setLogLevel } from "../log";
 
 /**
@@ -115,5 +122,63 @@ describe("settings persistence", () => {
         saveSettings(structuredClone(DEFAULT_SETTINGS));
 
         expect(debugSpy).toHaveBeenCalledOnce();
+    });
+});
+
+/**
+ * Regression: dynamic boolean maps (guide entry/group hide flags) default to `{}`, so the
+ * key-driven schema merge dropped every saved key on load/import — hidden guide entries and
+ * groups reappeared after a reload (F5).
+ */
+describe("dynamic boolean maps", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("restores hidden guide entries and groups on load", () => {
+        vi.stubGlobal("GM_getValue", (key: string, def: unknown) =>
+            key === "ytTweaksSettings"
+                ? JSON.stringify({
+                      guide: {
+                          entries: {
+                              hidden: { home: true, shorts: true },
+                              groups: { hidden: { main: true, subscriptions: false } },
+                          },
+                      },
+                  })
+                : def,
+        );
+
+        const s = loadSettings();
+
+        expect(s.guide.entries.hidden).toEqual({ home: true, shorts: true });
+        expect(s.guide.entries.groups.hidden).toEqual({ main: true, subscriptions: false });
+    });
+
+    it("restores hidden maps on import (deepMergeSettings)", () => {
+        const merged = deepMergeSettings(DEFAULT_SETTINGS, {
+            guide: { entries: { hidden: { live: true } } },
+        });
+
+        expect(merged.guide.entries.hidden.live).toBe(true);
+    });
+
+    it("copies unknown boolean keys but ignores non-boolean junk in dynamic maps", () => {
+        const merged = deepMergeSettings(DEFAULT_SETTINGS, {
+            guide: {
+                entries: {
+                    hidden: { customEntry: true, broken: "yes" },
+                },
+            },
+        });
+
+        expect(merged.guide.entries.hidden.customEntry).toBe(true);
+        expect("broken" in merged.guide.entries.hidden).toBe(false);
+    });
+
+    it("still drops unknown keys outside the dynamic maps (schema safety)", () => {
+        const merged = deepMergeSettings(DEFAULT_SETTINGS, {
+            guide: { entries: { bogus: true } },
+        });
+
+        expect("bogus" in merged.guide.entries).toBe(false);
     });
 });

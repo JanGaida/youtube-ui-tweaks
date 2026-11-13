@@ -11,6 +11,16 @@ export const PANEL_POS_KEY = "ytTweaksPanelPos";
 /** GM storage key for the persisted panel UI state (active category + scroll position). */
 export const PANEL_UI_KEY = "ytTweaksPanelUi";
 
+/**
+ * Dot-paths of dynamic boolean record maps (arbitrary keys → boolean).
+ *
+ * ! The schema-driven merge (deepMerge/deepMergeSettings) only copies keys that already exist
+ *   in the defaults. These maps default to `{}`, so their saved keys (guide entry/group hide
+ *   flags) would be dropped on every load/import without the explicit pass in
+ *   mergeDynamicBooleanMaps() — the guide sidebar reappears after a reload.
+ */
+const DYNAMIC_BOOLEAN_MAP_PATHS: readonly string[] = ["guide.entries.hidden", "guide.entries.groups.hidden"];
+
 /** Avatar (channel icon) styling settings for grid items. */
 export interface AvatarSettings {
     enabled: boolean;
@@ -711,16 +721,55 @@ export const DEFAULT_SETTINGS: Settings = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Reads a dot-path from a nested object.
+ *
+ * @param root - The object to traverse.
+ * @param path - Dot-notation path (e.g. "guide.entries.hidden").
+ * @returns The value at the path, or undefined when a segment is missing/not an object.
+ */
+function getAtPath(root: unknown, path: string): unknown {
+    let cur: unknown = root;
+    for (const part of path.split(".")) {
+        if (!isSettingsObject(cur)) return undefined;
+        cur = cur[part];
+    }
+    return cur;
+}
+
+/**
+ * Copies saved keys of the dynamic boolean record maps into the merged settings.
+ *
+ * ! Schema safety stays intact: only these allowlisted paths accept unknown keys, and only
+ *   boolean values are copied (junk values are ignored). All other unknown keys are still
+ *   dropped by the schema-driven merge.
+ *
+ * @param target - The merged settings object (mutated in place).
+ * @param saved  - The persisted object.
+ */
+function mergeDynamicBooleanMaps(target: unknown, saved: unknown): void {
+    for (const path of DYNAMIC_BOOLEAN_MAP_PATHS) {
+        const savedMap = getAtPath(saved, path);
+        const targetMap = getAtPath(target, path);
+        if (!isSettingsObject(savedMap) || !isSettingsObject(targetMap)) continue;
+        for (const [key, value] of Object.entries(savedMap)) {
+            if (typeof value === "boolean") targetMap[key] = value;
+        }
+    }
+}
+
+/**
  * Deep-merges saved values over defaults, recursively to arbitrary depth.
  *
  * Missing or non-object saved values fall back to the default. Array defaults are not recursed
- * (the saved scalar wins, if present).
+ * (the saved scalar wins, if present). Dynamic boolean maps (DYNAMIC_BOOLEAN_MAP_PATHS) are
+ * merged explicitly — their keys do not exist in the defaults.
  *
  * @param defaults - The default object (drives which keys are valid).
  * @param saved    - The persisted object (may be partial / malformed).
+ * @param isRoot   - Internal: only the root call merges the full-path dynamic maps.
  * @returns A new object of type T with defaults overridden by valid saved values.
  */
-export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
+export function deepMergeSettings<T>(defaults: T, saved: unknown, isRoot = true): T {
     const out: Record<string, unknown> = {};
     for (const key of Object.keys(defaults as Record<string, unknown>)) {
         const dv = (defaults as Record<string, unknown>)[key];
@@ -732,11 +781,12 @@ export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
                 ? (saved as Record<string, unknown>)[key]
                 : undefined;
         if (dv && typeof dv === "object" && !Array.isArray(dv)) {
-            out[key] = deepMergeSettings(dv, sv && typeof sv === "object" ? sv : {});
+            out[key] = deepMergeSettings(dv, sv && typeof sv === "object" ? sv : {}, false);
         } else {
             out[key] = sv !== undefined ? sv : dv;
         }
     }
+    if (isRoot) mergeDynamicBooleanMaps(out, saved);
     return out as T;
 }
 
@@ -1180,7 +1230,11 @@ export function loadSettings(): Settings {
         log.info(SCOPES.SETTINGS, "migrations applied", { migrations: applied });
     }
 
-    return deepMerge(defaults as unknown as Record<string, unknown>, saved) as unknown as Settings;
+    const merged = deepMerge(defaults as unknown as Record<string, unknown>, saved) as unknown as Settings;
+    // * ! After the schema merge: dynamic maps have no default keys, so their saved keys must
+    //   be copied explicitly (otherwise every guide hide flag is lost on reload).
+    mergeDynamicBooleanMaps(merged, saved);
+    return merged;
 }
 
 /**
