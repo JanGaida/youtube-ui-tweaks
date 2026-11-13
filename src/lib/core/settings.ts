@@ -1,3 +1,5 @@
+import { LOG_LEVELS, type SettingsLogLevel } from "./log";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Constants — default settings + persistence
 // ─────────────────────────────────────────────────────────────────────────────
@@ -736,6 +738,27 @@ export function deepMergeSettings<T>(defaults: T, saved: unknown): T {
         }
     }
     return out as T;
+}
+
+/**
+ * Reads the persisted `debug.logLevel` directly from GM storage without a full settings load.
+ *
+ * Used at boot to apply the stored level BEFORE `loadSettings()` runs, so settings-load and
+ * migration logs are visible when the user selected debug/info. Never throws — corrupt storage
+ * falls back to "silent" (loadSettings reports the corruption once it runs).
+ *
+ * @returns The stored level label, or "silent" when absent/invalid.
+ */
+export function readStoredLogLevel(): SettingsLogLevel {
+    try {
+        const raw = GM_getValue(SETTINGS_KEY, "{}");
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const label = (parsed as { debug?: { logLevel?: unknown } } | null)?.debug?.logLevel;
+        if (typeof label === "string" && label in LOG_LEVELS) return label as SettingsLogLevel;
+    } catch {
+        // * Handled (and logged) by loadSettings — keep the pre-read silent.
+    }
+    return "silent";
 }
 
 /**

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
     registerFeature,
     resetRegistry,
@@ -18,6 +18,7 @@ import type { Feature } from "../feature.types";
 import type { PageCtx } from "../page";
 import type { Settings } from "../settings";
 import { DEFAULT_SETTINGS } from "../settings";
+import { setLogLevel } from "../log";
 
 /**
  * Pure-logic tests for the FeatureRegistry — dispatch by page, CSS aggregation, live-apply key
@@ -79,6 +80,11 @@ describe("FeatureRegistry", () => {
             const s = { styling: { titleAlign: "center" } } as unknown as Settings;
             expect(getSlice(s, "styling.titleAlign")).toBe("center");
         });
+
+        it("returns undefined for a missing intermediate segment instead of throwing", () => {
+            const s = { styling: {} } as unknown as Settings;
+            expect(getSlice(s, "styling.missing.deep")).toBeUndefined();
+        });
     });
 
     describe("runAll", () => {
@@ -101,6 +107,39 @@ describe("FeatureRegistry", () => {
             registerFeature({ id: "a", settingsPath: "styling", pages: { home: { run } }, liveApplyKeys: [] });
             runAll(makeCtx("watch"));
             expect(run).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("error handling", () => {
+        afterEach(() => {
+            setLogLevel("silent");
+            vi.restoreAllMocks();
+        });
+
+        it("logs the first failure as error and suppresses repeats at error level", () => {
+            setLogLevel("error");
+            const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+            registerFeature({
+                id: "boom",
+                settingsPath: "styling",
+                pages: {
+                    home: {
+                        run: () => {
+                            throw new Error("boom");
+                        },
+                    },
+                },
+                liveApplyKeys: [],
+            });
+
+            runAll(makeCtx("home"));
+            runAll(makeCtx("home"));
+
+            expect(errorSpy).toHaveBeenCalledOnce();
+            const payload = errorSpy.mock.calls[0].at(-1) as Record<string, unknown>;
+            expect(payload.feature).toBe("boom");
+            expect(payload.phase).toBe("run");
+            expect(payload.count).toBe(1);
         });
     });
 

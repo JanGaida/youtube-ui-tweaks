@@ -2,9 +2,10 @@ import { store } from "./lib/stores/settings.svelte";
 import { openSettings } from "./lib/app/panel";
 import { applyCSS } from "./lib/core/css";
 import { detectLocale } from "./lib/core/locale";
-import { setLogLevel } from "./lib/core/log";
+import log, { isDebugEnabled, setLogLevel, SCOPES } from "./lib/core/log";
+import { readStoredLogLevel } from "./lib/core/settings";
 import { setCurrentLocale, startObserver, runAll, applyAllLive } from "./lib/core/observer";
-import { initPageContext, recomputePageCtx } from "./lib/core/page";
+import { getPageCtx, initPageContext, recomputePageCtx } from "./lib/core/page";
 import { registerAllFeatures } from "./lib/core/features";
 import { captureAllSequential } from "./lib/dev/capture";
 import { setTweaksEnabled } from "./lib/core/system-toggle";
@@ -20,10 +21,20 @@ import "./app.css";
 //   generate the feature-driven CSS. Gated by `system.tweaksEnabled` — when disabled, skip CSS +
 //   observer. The kill-switch state lives in the settings JSON (migrated from the legacy separate
 //   GM key `ytTweaksEnabled`).
+//
+// ! Log level FIRST: read the persisted level directly from storage, before feature
+//   registration and settings load. Otherwise every debug log emitted during boot is dropped
+//   by the "silent" default and the first debug session shows nothing.
+
+setLogLevel(readStoredLogLevel());
 
 registerAllFeatures();
 
 const settings = store.load();
+
+// * Defensive re-apply: the loaded settings are the source of truth if the pre-read shape differed.
+setLogLevel(settings.debug?.logLevel ?? "silent");
+
 initPageContext(settings, (ctx) => {
     // * SPA navigation changed page or locale → re-detect locale ref + re-run features.
     //   ! Page-dependent CSS (registry picks behavior per page) must be regenerated on
@@ -38,46 +49,36 @@ initPageContext(settings, (ctx) => {
         runAll();
     }
 });
-let locale = detectLocale();
+const locale = detectLocale();
 setCurrentLocale(locale);
 
+let bootPage = "unknown";
 try {
-    setLogLevel(settings.debug ? settings.debug.logLevel : "info");
-} catch (e) {
-    console.error("[YT-Tweaks] boot: setLogLevel failed", e);
+    bootPage = getPageCtx().page;
+} catch {
+    // * PageContext is initialized above — keep the boot log resilient if that ever changes.
 }
 
-// * Boot diagnostic — the script-manager's own GM_info, unconditional (boot once, not a hot
-//   path). Picked fields instead of the raw object: `script.version` is the header @version
-//   (the authoritative installed version), the top-level `version` is handler-dependent
-//   (TM 5.5.0 was observed to report its own extension version here — ADR 0010), and
-//   `script.header` shows the STORED metadata the manager parsed from the install.
-const gm = typeof GM_info !== "undefined" ? GM_info : null;
-const gmInfo = gm
-    ? {
-          scriptHandler: gm.scriptHandler,
-          version_topLevel: gm.version,
-          script_version: gm.script?.version,
-          script_header: gm.script?.header,
-          script_fileURL: gm.script?.fileURL,
-          script_updateURL: gm.script?.updateURL,
-          script_downloadURL: gm.script?.downloadURL,
-      }
-    : null;
+log.info(SCOPES.BOOT, "document-start", {
+    readyState: document.readyState,
+    locale,
+    page: bootPage,
+    logLevel: settings.debug?.logLevel ?? "silent",
+    enabled: settings.system.tweaksEnabled,
+});
 
-console.info(
-    `%c[YT-Tweaks]%c INFO %cboot`,
-    "color:#ff0000;font-weight:700",
-    "color:#44aaff;font-weight:600",
-    "color:#aaa;font-style:italic",
-    `document-start (readyState=${document.readyState})`,
-    {
-        locale,
-        logLevel: settings.debug ? settings.debug.logLevel : "?",
-        enabled: settings.system.tweaksEnabled,
-        gm: gmInfo,
-    },
-);
+// * Script-manager diagnostics are only useful when debugging — keep them out of the info line.
+if (isDebugEnabled()) {
+    const gm = typeof GM_info !== "undefined" ? GM_info : null;
+    log.debug(SCOPES.BOOT, "script manager info", {
+        scriptHandler: gm?.scriptHandler,
+        version_topLevel: gm?.version,
+        script_version: gm?.script?.version,
+        script_fileURL: gm?.script?.fileURL,
+        script_updateURL: gm?.script?.updateURL,
+        script_downloadURL: gm?.script?.downloadURL,
+    });
+}
 
 // * Anonymize layer — boot-time apply (independent of the kill-switch). If saved on, mount the
 //   blur `<style>` immediately so a reload with anonymize-on is active before first paint.
@@ -85,7 +86,7 @@ if (settings.system.anonymize) {
     try {
         applyAnonymize(true);
     } catch (e) {
-        console.error("[YT-Tweaks] boot: applyAnonymize failed", e);
+        log.error(SCOPES.BOOT, "applyAnonymize failed", e);
     }
 }
 
@@ -93,10 +94,10 @@ if (settings.system.tweaksEnabled) {
     try {
         applyCSS(settings);
     } catch (e) {
-        console.error("[YT-Tweaks] boot: applyCSS failed", e);
+        log.error(SCOPES.BOOT, "applyCSS failed", e);
     }
 } else {
-    console.info("[YT-Tweaks] boot: tweaks disabled (clean state) — skipping CSS + observer");
+    log.info(SCOPES.BOOT, "tweaks disabled (clean state) — skipping CSS + observer");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,19 +105,16 @@ if (settings.system.tweaksEnabled) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function onDCL(): void {
-    locale = detectLocale();
-    setCurrentLocale(locale);
+    const dclLocale = detectLocale();
+    setCurrentLocale(dclLocale);
     // * documentElement.lang may have been absent/wrong at document-start — re-detect the
     //   PageContext so features dispatch with the corrected LOCALE_PATTERNS. Notifies (and
     //   re-dispatches) only when the locale actually changed.
     recomputePageCtx();
-    console.info(
-        `%c[YT-Tweaks]%c INFO %cboot`,
-        "color:#ff0000;font-weight:700",
-        "color:#44aaff;font-weight:600",
-        "color:#aaa;font-style:italic",
-        `DOMContentLoaded — initial run + observer start (enabled: ${settings.system.tweaksEnabled})`,
-    );
+    log.info(SCOPES.BOOT, "DOMContentLoaded — initial run + observer start", {
+        locale: dclLocale,
+        enabled: settings.system.tweaksEnabled,
+    });
     if (settings.system.tweaksEnabled) {
         runAll();
         startObserver();
@@ -127,7 +125,7 @@ function onDCL(): void {
             try {
                 openSettings();
             } catch (e) {
-                console.error("[YT-Tweaks] boot: autoOpen failed", e);
+                log.error(SCOPES.BOOT, "autoOpen failed", e);
             }
         }, 300);
     }
@@ -189,6 +187,6 @@ if (__DEV_CAPTURE__) {
 //   blocks Playwright-driven capture, so this is the only reliable batch-capture path.
 if (__DEV_CAPTURE__) {
     GM_registerMenuCommand("Capture All Fixtures", () => {
-        captureAllSequential().catch((e) => console.error("[YT-Tweaks] capture-all failed", e));
+        captureAllSequential().catch((e) => log.error(SCOPES.BOOT, "capture-all failed", e));
     });
 }
