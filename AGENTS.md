@@ -103,6 +103,8 @@ ALWAYS prefer many precise steps over one large — each step MUST be traceable,
   commit locally, then ask
 - PR titles MUST follow Conventional Commits: `type(scope): description` — details and rationale:
   [ADR 0009](docs/adr/0009-squash-merge-and-pr-title-contract.md)
+- Commit type decides changelog visibility: `feat`/`fix`/`perf`/`revert` appear, every other
+  type is hidden — a breaking change needs a visible type (`feat!`/`fix!`)
 - Commits touching release-managed files (versions, marker, release config) MUST be
   changelog-visible (`feat`/`fix`) — rationale:
   [ADR 0008](docs/adr/0008-release-please-automation-contract.md)
