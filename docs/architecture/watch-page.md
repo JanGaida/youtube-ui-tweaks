@@ -1,8 +1,8 @@
 # Architecture: Watch-Page Feature
 
 > Watch-page (`/watch`) layout tweaks for `ytd-watch-metadata`: hide member/like-
-> dislike/download buttons (CSS), hide share/save buttons (locale-aware JS DOM pass),
-> description click-to-fold (JS DOM pass), and collapsed-description line count (CSS).
+> dislike/download/thanks buttons (CSS), hide share/save buttons (locale-aware JS DOM
+> pass), description click-to-fold (JS DOM pass), and collapsed-description line count (CSS).
 > Watch-page only — `ytd-watch-metadata` exists solely on `/watch`. Diagrams depict
 > relationships, structure, and boundaries — no implementation details.
 
@@ -22,7 +22,7 @@ flowchart TB
 
   subgraph Core["core/ (framework-free)"]
     WP["watch-page.ts feature"]
-    WP -->|css: hideMember / hideLikeDislike / download / descLines / flash| YTStyle["&lt;style&gt; (registry-driven)"]
+    WP -->|css: hideMember / hideLikeDislike / download / thanks / descLines / flash| YTStyle["&lt;style&gt; (registry-driven)"]
     WP -->|run: share/save JS-pass + descriptionClickFold| DOM["ytd-watch-metadata DOM"]
     WP -->|restore| DOM
   end
@@ -41,6 +41,7 @@ flowchart LR
     C1[hide member button → #sponsor-button]
     C2[hide like/dislike → segmented-like-dislike-button-view-model]
     C3[hide download button → ytd-download-button-renderer]
+    C6[hide Super Thanks → :has(button[aria-label="Thanks"])]
     C4[description lines → #snippet max-height]
     C5[descriptionClickFold hover → #description background themed-color]
   end
@@ -61,6 +62,8 @@ attribute (`data-yt-tweaks-watch-hidden`) on the matching `yt-button-view-model`
 a CSS attribute-selector rule hides it. The marker (not inline style) is re-render-safe —
 see [ADR 0001](../adr/0001-marker-attribute-over-inline-style.md). Download is a
 language-independent custom element (`ytd-download-button-renderer`) → pure CSS suffices.
+Super Thanks is also language-independent — its `aria-label` stays `"Thanks"` even in the
+German UI (verified live 2026-11-13) → pure CSS `:has()` on the label, no locale map needed.
 Member/Like/Dislike target stable custom-element/ID selectors → pure CSS.
 
 ## Locale-Aware Button Matching
@@ -144,6 +147,7 @@ flowchart TB
     A3[Hide share - JS pass, locale aria-label map]
     A4[Hide save - JS pass, locale aria-label map]
     A5[Hide download - CSS]
+    A8[Hide Super Thanks - CSS :has() on aria-label 'Thanks' (not localized)]
     A6[Description click-toggle - DOM pass]
     A7[Description line count - CSS max-height]
   end
@@ -153,6 +157,7 @@ flowchart TB
     B2[Like/dislike separated - segmented wrapper falls apart]
     B3[Animated hover-grow description - over-engineering]
     B4[Hide merch shelf - belongs to ads-promotions]
+    B5[Hide Thanks in comments/overflow - not the watch action button]
   end
 ```
 
@@ -164,7 +169,7 @@ flowchart TB
 - Tests: `src/lib/core/__tests__/watch-page.test.ts`
 - Decisions: [ADR 0001](../adr/0001-marker-attribute-over-inline-style.md), [ADR 0002](../adr/0002-document-delegation-over-element-listeners.md)
 
-Verified: 2026-10-19 — against `src/lib/core/features/watch-page.ts` (ACTION_LABELS de/en, resolveLabels de fallback, `data-yt-tweaks-watch-hidden` marker, description click-fold guards), `src/lib/core/settings.ts`, `src/lib/gui/tabs/WatchPageTab.svelte` @ working tree (re-checked 2026-10-24 after the meta-split change: watch-page feature untouched; meta-split is grid-pages-only; re-checked 2026-10-25 after the ADR 0007 defaults change: DEFAULT_SETTINGS.watchPage now ships enabled true, hideMemberButton true, share/save/download "verstecken", descriptionClickFold true — DOM-pass + CSS logic unchanged; settings.ts comment-only re-pass, no behavior change)
+Verified: 2026-11-14 — against `src/lib/core/features/watch-page.ts` (ACTION_LABELS de/en, resolveLabels de fallback, `data-yt-tweaks-watch-hidden` marker, description click-fold guards, `thanksButton` pure-CSS `:has(button[aria-label="Thanks"])` rule — live de-DE DOM 2026-11-13 showed the label is not localized), `src/lib/core/settings.ts` (`WatchPageSettings.thanksButton`), `src/lib/gui/tabs/WatchPageTab.svelte` (8 controls), `src/lib/gui/i18n.svelte.ts` (`field.thanksButton` de/en) @ working tree (prior: 2026-10-25 ADR 0007 defaults — enabled true, hideMemberButton true, share/save/download "verstecken"; 2026-10-24 meta-split re-check: watch-page untouched)
 
 ## Page Scope
 

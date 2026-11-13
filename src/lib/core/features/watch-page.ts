@@ -5,8 +5,8 @@ import type { WatchPageSettings, WatchDescriptionLines } from "../settings";
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: watch-page feature — ytd-watch-metadata layout tweaks (watch page only)
 // ─────────────────────────────────────────────────────────────────────────────
-// * CSS: hide member-button, like/dislike block, download button, description
-//   line-count override (all pure CSS, re-render-safe !important).
+// * CSS: hide member-button, like/dislike block, download button, Super Thanks button,
+//   description line-count override (all pure CSS, re-render-safe !important).
 // * JS DOM-pass: hide Share/Save buttons via locale-aware aria-label match
 //   (no stable non-localized class — language-dependent, analog LOCALE_PATTERNS),
 //   and install a single capture click-listener on `document` that toggles the
@@ -46,6 +46,8 @@ const DESC_LINES_HEIGHT: Record<WatchDescriptionLines, string> = {
  * - hideLikeDislike → `segmented-like-dislike-button-view-model` display:none.
  * - downloadButton "verstecken" → `ytd-download-button-renderer` display:none
  *   (language-independent custom element).
+ * - thanksButton "verstecken" → `yt-button-view-model:has(button[aria-label="Thanks"])`
+ *   display:none (`:has()` on the non-localized aria-label; language-independent, pure CSS).
  * - descriptionClickFold → theme-color hover on the expanded description box (CSS) +
  *   capture click-listener on `document` that toggles expand/collapse (JS DOM-pass).
  *   ! The hover rule reuses YT's own `--yt-saturated-raised-background` (the per-video
@@ -71,6 +73,14 @@ function watchPageCss(slice: unknown): string[] {
     if (s.downloadButton === "verstecken") {
         rules.push(
             `ytd-watch-metadata #actions #flexible-item-buttons ytd-download-button-renderer { display: none !important; }`,
+        );
+    }
+    // * Thanks: `aria-label="Thanks"` is NOT localized (verified live on de-DE 2026-11-13),
+    //   so no locale map is needed — pure CSS :has() on the label, re-render-safe.
+    //   ! Update the selector if YouTube renames or localizes the label.
+    if (s.thanksButton === "verstecken") {
+        rules.push(
+            `ytd-watch-metadata #actions yt-button-view-model:has(button[aria-label="Thanks"]) { display: none !important; }`,
         );
     }
     // * Share/Save hide: JS pass only sets the marker (below); CSS hides the marked host.
@@ -278,22 +288,24 @@ export function restoreWatchPage(): void {
 }
 
 /**
- * Watch-page feature: member/like-dislike/download hide (CSS) + share/save hide
+ * Watch-page feature: member/like-dislike/download/thanks hide (CSS) + share/save hide
  * (locale-aware JS DOM pass) + description click-fold (JS DOM pass) + description
  * line-count (CSS). Watch-page only (`ytd-watch-metadata` exists on /watch).
  *
  * * DOM-Fixture: none captured yet — selectors verified against user-provided
  *   ytd-watch-metadata HTML (2026-08-26; description DOM re-verified 2026-08-27 for the
  *   click-fold hover/click bug fix; selection-guard added 2026-09-12 after the drag-select
- *   copy bug). Share/Save aria-labels are locale-dependent (de/en);
- *   Download is language-independent. Description click-fold toggles via programmatic
+ *   copy bug). Share/Save aria-labels are locale-dependent (de/en); Download and Thanks
+ *   are language-independent. Description click-fold toggles via programmatic
  *   #expand/#collapse button click.
  * ~ DECISION-LOG: Share/Save use a JS-pass-set marker attribute + CSS attribute-selector
  *   hide rule (not inline display:none — Polymer's style binding clobbers inline styles on
  *   re-render; an attribute-marker persists and the CSS rule is re-render-safe). aria-label
  *   is locale-dependent → locale map (de/en, fallback de) analog LOCALE_PATTERNS. The
- *   observer re-marks on re-render if YT replaces the button element. Download stays pure
- *   CSS (custom element, no text-match needed). Description click-fold uses a synthetic
+ *   observer re-marks on re-render if YT replaces the button element. Download and Thanks
+ *   stay pure CSS — Download is a custom element, Thanks has a non-localized aria-label
+ *   (`"Thanks"` even in de-DE, verified live 2026-11-13) → `:has()`, no locale map needed.
+ *   Description click-fold uses a synthetic
  *   pointer gesture (pointerdown→pointerup→click) because tp-yt-paper-button's Polymer
  *   on-tap ignores a bare .click().
  * ~ DECISION-LOG (2026-08-27, click-fold hover/click bug): the click listener was moved from
@@ -327,6 +339,7 @@ export const watchPageFeature: Feature = {
         "watchPage.shareButton",
         "watchPage.saveButton",
         "watchPage.downloadButton",
+        "watchPage.thanksButton",
         "watchPage.descriptionClickFold",
         "watchPage.descriptionLines",
     ],

@@ -106,7 +106,7 @@ src/
     │   └── validation.svelte.ts  # Reactive validation state
     └── gui/                       # Svelte 5 components
         ├── App.svelte            # Panel root: header/drag/esc/backdrop/9 categories + focus trap + resize handles
-        ├── i18n.svelte.ts        # TRANSLATIONS (de/en, 443 keys each) + reactive t() via $derived
+        ├── i18n.svelte.ts        # TRANSLATIONS (de/en, 453 keys each) + reactive t() via $derived
         ├── icons.ts              # SVG path strings (CAT_ICONS + SUB_ICONS)
         ├── panel.css             # All .yt-tweaks-* classes (global)
         ├── types.ts              # Shared GUI types (SelectOption, DebugStats)
@@ -132,7 +132,7 @@ src/
             ├── GuideSidebarTab.svelte  # Guide-Sidebar: visibility/styling/entry-hide-sort/groups
             ├── FeedChipsTab.svelte     # Feed-Chips: enable/active-color/layout
             ├── StartpageTab.svelte     # Startpage: grid-column-count override (home/abo/channel)
-            ├── WatchPageTab.svelte     # Watch-Page: member/like-dislike/share/save/download hide + description QoL
+            ├── WatchPageTab.svelte     # Watch-Page: member/like-dislike/share/save/download/thanks hide + description QoL
             ├── AdsPromotionsTab.svelte # Ads & Promotions: 3 gated groups (promo/shelves/survey)
             ├── SystemTab.svelte        # System: tweaks/panel/logging/status
             └── AboutTab.svelte         # Static version/author/github/changelog
@@ -196,7 +196,7 @@ The store is the **single source of truth**. GUI mutations (`setByPath`) call `s
 
 ### i18n (`gui/i18n.svelte.ts`)
 
-- `TRANSLATIONS: Record<"de" | "en", Record<string, string>>` — 443 keys per language (de/en key sets identical)
+- `TRANSLATIONS: Record<"de" | "en", Record<string, string>>` — 453 keys per language (de/en key sets identical)
 - Key structure: `cat.*` (category labels), `sec.*` (section titles + `.desc` descriptions), `field.*` (field labels), `opt.*`/`optdesc.*` (select options + descriptions), `subsec.*` (in-section sub-groups), `a11y.*` (accessible names — incl. the 8 `a11y.resize*` labels for the focusable resize-handle buttons), `ads.*`, `about.*`, `btn.*`, `msg.*`, `close.title`
 - `t(key)` is reactive: reads `gui.locale` setting via internal `$derived` → labels update instantly on locale switch (no remount)
 - `resolveGuiLocale("auto")` → `detectLocale()` (YouTube content language); unknown → `en` fallback
@@ -249,7 +249,7 @@ For rapid iteration: open settings once, go to System → Panel → toggle Auto-
 
 ### Adding a GUI Translation Language
 
-1. Add locale code to `TRANSLATIONS` in `i18n.svelte.ts` (e.g. `"fr": { ... }`) — copy all 443 keys from `en`, translate values
+1. Add locale code to `TRANSLATIONS` in `i18n.svelte.ts` (e.g. `"fr": { ... }`) — copy all 453 keys from `en`, translate values
 2. Update `GuiLocale` type: `"de" | "en"` → add `"fr"`
 3. Add to `getLocaleOptions()` in `i18n.svelte.ts`
 4. Update `resolveGuiLocale()` if the language should be auto-detected from YouTube content language
@@ -352,7 +352,7 @@ npm run build   # dist/youtube-ui-tweaks.user.js must have correct userscript he
 
 ### i18n Key-Drift Check
 
-The `TRANSLATIONS.de` and `.en` key sets must be identical (443 keys each). Quick check (counts keys line-by-line inside the `de: {` / `en: {` blocks):
+The `TRANSLATIONS.de` and `.en` key sets must be identical (453 keys each). Quick check (counts keys line-by-line inside the `de: {` / `en: {` blocks):
 
 ```bash
 node -e "const c=require('fs').readFileSync('src/lib/gui/i18n.svelte.ts','utf8').split('\n');const grab=(m)=>{const i=c.findIndex(l=>l.trim()===m);const ks=[];for(let j=i+1;j<c.length;j++){if(/^\s{4}\},?\s*$/.test(c[j]))break;const k=c[j].match(/^\s*\"([a-zA-Z0-9_.-]+)\":/);if(k)ks.push(k[1]);}return ks;};const d=grab('de: {'),e=grab('en: {');console.log('de:',d.length,'en:',e.length);console.log('missing in en:',d.filter(k=>!e.includes(k)));console.log('missing in de:',e.filter(k=>!d.includes(k)));"
