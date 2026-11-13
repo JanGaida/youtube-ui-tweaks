@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/JanGaida/youtube-ui-tweaks/compare/youtube-ui-tweaks-v1.2.0...youtube-ui-tweaks-v1.3.0) (2026-11-13)
+
+
+### Features
+
+* **logging:** structured logger, boot hardening, and debug report ([#13](https://github.com/JanGaida/youtube-ui-tweaks/issues/13)) ([40da8de](https://github.com/JanGaida/youtube-ui-tweaks/commit/40da8deea10fdb15b9d44eeb3e40aa490fe89f14))
+* **watch-page:** add Super Thanks button hide setting ([#15](https://github.com/JanGaida/youtube-ui-tweaks/issues/15)) ([302294d](https://github.com/JanGaida/youtube-ui-tweaks/commit/302294d05328f84fdd38c94d6e99257b41db1f65))
+
 ## [1.2.0](https://github.com/JanGaida/youtube-ui-tweaks/compare/youtube-ui-tweaks-v1.1.1...youtube-ui-tweaks-v1.2.0) (2026-10-26)
 
 
